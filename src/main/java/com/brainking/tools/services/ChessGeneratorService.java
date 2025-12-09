@@ -50,27 +50,28 @@ public class ChessGeneratorService {
     private final YouTubeService youTubeService;
     private final EncoderService encoderService;
 
-    @Value("${source.folder}")
-    private String sourceFolder;
-
-    @Value("${target.folder}")
-    private String targetFolder;
-
-    @Value("${youtube.export.active:false}")
-    private boolean youTubeExportActive;
-
-    @Value("${generate.video:true}")
-    private boolean generateVideo;
+    private final String sourceFolder;
+    private final String targetFolder;
+    private final boolean youTubeExportActive;
+    private final boolean generateVideo;
 
     @Autowired
     public ChessGeneratorService(PositionService positionService,
-                                 ImportService importService,
-                                 YouTubeService youTubeService,
-                                 EncoderService encoderService) {
+                                ImportService importService,
+                                YouTubeService youTubeService,
+                                EncoderService encoderService,
+                                @Value("${source.folder}") String sourceFolder,
+                                @Value("${target.folder}") String targetFolder,
+                                @Value("${youtube.export.active:false}") boolean youTubeExportActive,
+                                @Value("${generate.video:true}") boolean generateVideo) {
         this.positionService = positionService;
         this.importService = importService;
         this.youTubeService = youTubeService;
         this.encoderService = encoderService;
+        this.sourceFolder = sourceFolder;
+        this.targetFolder = targetFolder;
+        this.youTubeExportActive = youTubeExportActive;
+        this.generateVideo = generateVideo;
     }
 
     @EventListener(ApplicationReadyEvent.class)

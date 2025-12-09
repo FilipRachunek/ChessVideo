@@ -1,14 +1,11 @@
 package com.brainking.tools;
 
-import com.brainking.tools.dto.Game;
-import com.brainking.tools.services.YouTubeService;
-
 public class YouTubeTester {
 
     public static void main(String[] args) {
-        YouTubeService youTubeService = new YouTubeService();
+/*      YouTubeService youTubeService = new YouTubeService();
         youTubeService.listChannel();
-/*
+
         Game game = new Game("TestGame");
         game.addMetadata("White", "White");
         game.addMetadata("Black", "Black");

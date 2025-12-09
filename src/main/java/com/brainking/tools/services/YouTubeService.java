@@ -36,20 +36,25 @@ public class YouTubeService {
 
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final String APPLICATION_NAME = "Chess Videos";
-    @Value("${youtube.api.key}")
-    private static String API_KEY;
-    @Value("${youtube.client.secrets}")
-    private static String CLIENT_SECRETS;
-    @Value("${youtube.channel.id}")
-    private static String CHANNEL_ID;
     private static final Collection<String> SCOPES = Collections.singletonList("https://www.googleapis.com/auth/youtube.upload");
+    private final String apiKey;
+    private final String clientSecretsFile;
+    private final String channelId;
+
+    public YouTubeService(@Value("${youtube.api.key}") String apiKey,
+                        @Value("${youtube.client.secrets.file}") String clientSecretsFile,
+                        @Value("${youtube.channel.id}") String channelId) {
+        this.apiKey = apiKey;
+        this.clientSecretsFile = clientSecretsFile;
+        this.channelId = channelId;
+    }
 
     public void listChannel() {
         try {
-            YouTube youTube = getClient(API_KEY);
+            YouTube youTube = getClient(apiKey);
             YouTube.Channels.List request = youTube.channels()
                     .list("snippet,contentDetails,statistics");
-            ChannelListResponse response = request.setId(CHANNEL_ID).execute();
+            ChannelListResponse response = request.setId(channelId).execute();
             System.out.println(response);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -61,7 +66,7 @@ public class YouTubeService {
             YouTube youTube = getClient(null);
             Video video = new Video();
             VideoSnippet snippet = new VideoSnippet();
-            snippet.setChannelId("UCAYbluuAXilmrz3N_fTxO1g");
+            snippet.setChannelId(channelId);
             snippet.setTitle(game.getDate() + " (" + game.getWhite() + " vs " + game.getBlack() + ")");
             snippet.setDescription("Played on BrainKing.com");
             video.setSnippet(snippet);
@@ -98,7 +103,7 @@ public class YouTubeService {
     }
 
     private Credential authorize(final NetHttpTransport httpTransport) throws IOException {
-        InputStream inputStream = new FileInputStream(CLIENT_SECRETS);
+        InputStream inputStream = new FileInputStream(clientSecretsFile);
         GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(inputStream));
         GoogleAuthorizationCodeFlow flow =
                 new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY, clientSecrets, SCOPES)
