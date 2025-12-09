@@ -476,6 +476,7 @@ public class ChessGeneratorService {
         // create images for current board size, so it won't be deformed by drawImage scaling
         transcodingHints.put(ImageTranscoder.KEY_WIDTH, squareSize);
         transcodingHints.put(ImageTranscoder.KEY_HEIGHT, squareSize);
+        transcodingHints.put(ImageTranscoder.KEY_ALLOW_EXTERNAL_RESOURCES, Boolean.TRUE);
         return transcodingHints;
     }
 
