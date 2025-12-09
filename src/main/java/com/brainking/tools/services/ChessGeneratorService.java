@@ -30,6 +30,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -81,7 +82,9 @@ public class ChessGeneratorService {
         Collection<File> files = FileUtils.listFiles(input, extensions, false);
         if (CollectionUtils.isEmpty(files)) {
             System.out.println("No PGN files found.");
+            return;
         }
+        createFolders(input, archive);
         // TODO: setup YouTube OAuth 2 flow at the start
         for (File pgnFile : files) {
             Collection<File> existingFiles = FileUtils.listFiles(archive, FileFilterUtils.nameFileFilter(pgnFile.getName()), null);
@@ -189,6 +192,15 @@ public class ChessGeneratorService {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+        }
+    }
+
+    private void createFolders(File input, File archive) {
+        try {
+            FileUtils.forceMkdir(input);
+            FileUtils.forceMkdir(archive);
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 

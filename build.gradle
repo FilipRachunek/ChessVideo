@@ -25,7 +25,8 @@ dependencies {
     implementation group: "com.google.guava", name: "guava", version: "31.1-jre"
     implementation group: 'org.jcodec', name: 'jcodec-javase', version: '0.2.5'
     implementation group: 'org.apache.xmlgraphics', name: 'batik-transcoder', version: '1.16'
-    implementation group: 'ws.schild', name: 'jave-core', version: '3.0.1'
+    implementation group: 'ws.schild', name: 'jave-core', version: '3.5.0'
+    implementation("ws.schild:jave-all-deps:3.5.0")
     implementation group: 'ws.schild', name: 'jave-nativebin-osx64', version: '3.0.1'
     implementation group: 'com.google.api-client', name: 'google-api-client', version: '2.1.2'
     implementation group: 'com.google.apis', name: 'google-api-services-youtube', version: 'v3-rev222-1.25.0'

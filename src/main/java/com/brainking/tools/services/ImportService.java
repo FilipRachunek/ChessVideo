@@ -3,6 +3,7 @@ package com.brainking.tools.services;
 import com.brainking.tools.dto.Color;
 import com.brainking.tools.dto.Game;
 import com.brainking.tools.dto.Move;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -24,7 +25,7 @@ public class ImportService {
     public Game importPgn(File file) throws IOException {
         System.out.println("Loading PGN file: " + file.getAbsolutePath());
         Game game = new Game(FilenameUtils.getBaseName(file.getName()));
-        List<String> lines = FileUtils.readLines(file);
+        List<String> lines = FileUtils.readLines(file, "UTF-8");
         game.setPgnCode(String.join("\n", lines));
         StringBuilder moveBuilder = new StringBuilder();
         boolean moveLinesFound = false;
