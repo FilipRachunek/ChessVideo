@@ -1,0 +1,40 @@
+buildscript {
+    ext {
+        springBootVersion = '4.0.0'
+    }
+}
+
+plugins {
+    id 'org.springframework.boot' version "${springBootVersion}"
+    id 'java'
+}
+
+group 'com.brainking.tools'
+version '1.1'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: "org.springframework.boot", name: "spring-boot-starter", version: "${springBootVersion}"
+    implementation group: "commons-net", name: "commons-net", version: "3.9.0"
+    implementation group: "org.apache.commons", name: "commons-lang3", version: "3.0"
+    implementation group: "org.apache.commons", name: "commons-collections4", version: "4.4"
+    implementation group: "commons-io", name: "commons-io", version: "2.11.0"
+    implementation group: "com.google.guava", name: "guava", version: "31.1-jre"
+    implementation group: 'org.jcodec', name: 'jcodec-javase', version: '0.2.5'
+    implementation group: 'org.apache.xmlgraphics', name: 'batik-transcoder', version: '1.16'
+    implementation group: 'ws.schild', name: 'jave-core', version: '3.0.1'
+    implementation group: 'ws.schild', name: 'jave-nativebin-osx64', version: '3.0.1'
+    implementation group: 'com.google.api-client', name: 'google-api-client', version: '2.1.2'
+    implementation group: 'com.google.apis', name: 'google-api-services-youtube', version: 'v3-rev222-1.25.0'
+    implementation group: 'com.google.api-client', name: 'google-api-client-java6', version: '1.31.3'
+    implementation group: 'com.google.oauth-client', name: 'google-oauth-client-jetty', version: '1.31.4'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+test {
+    useJUnitPlatform()
+}

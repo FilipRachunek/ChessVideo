@@ -1,0 +1,2 @@
+Chess symbols (svg): https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces
+ - Public Domain: https://creativecommons.org/publicdomain/zero/1.0/
