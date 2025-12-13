@@ -242,29 +242,29 @@ public class ChessGeneratorService {
 
     private void renderCurrentMoveNotation(Graphics2D g, Position position) {
         Notation notation = position.getCurrentMoveNotationDto();
-        if (StringUtils.isNotBlank(notation.getPgnCode())) {
+        if (StringUtils.isNotBlank(notation.pgnCode())) {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             Font font = Fonts.RESULT_FONT;
             g.setFont(font);
             g.setColor(Color.BLACK);
             FontMetrics fontMetrics = g.getFontMetrics(font);
-            String fullNotation = notation.getPgnCode() + (notation.getResult() == null ? "" : notation.getResult());
+            String fullNotation = notation.pgnCode() + (notation.result() == null ? "" : notation.result());
             int x = (Constants.VIDEO_WIDTH - fontMetrics.stringWidth(fullNotation)) / 2;
             int y = Constants.VIDEO_HEIGHT - fontMetrics.getHeight() - 30;
-            g.drawString(notation.getPrefix(), x, y);
-            x += fontMetrics.stringWidth(notation.getPrefix());
-            if (StringUtils.isNotBlank(notation.getSymbol())) {
+            g.drawString(notation.prefix(), x, y);
+            x += fontMetrics.stringWidth(notation.prefix());
+            if (StringUtils.isNotBlank(notation.symbol())) {
                 Font symbolFont = Fonts.SYMBOL_FONT;
                 g.setFont(symbolFont);
                 FontMetrics symbolFontMetrics = g.getFontMetrics(symbolFont);
-                g.drawString(notation.getSymbol(), x, y);
-                x += symbolFontMetrics.stringWidth(notation.getSymbol());
+                g.drawString(notation.symbol(), x, y);
+                x += symbolFontMetrics.stringWidth(notation.symbol());
             }
             g.setFont(font);
-            g.drawString(notation.getSuffix(), x, y);
-            x += fontMetrics.stringWidth(notation.getSuffix());
-            if (StringUtils.isNotBlank(notation.getResult())) {
-                g.drawString(notation.getResult(), x, y);
+            g.drawString(notation.suffix(), x, y);
+            x += fontMetrics.stringWidth(notation.suffix());
+            if (StringUtils.isNotBlank(notation.result())) {
+                g.drawString(notation.result(), x, y);
             }
         }
     }

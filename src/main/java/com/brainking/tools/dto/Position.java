@@ -518,47 +518,45 @@ public class Position {
     }
 
     public Notation getCurrentMoveNotationDto() {
-        Notation notation = new Notation();
+        String pgnCode = "";
+        int moveNumber = -1;
+        String prefix = "";
+        String symbol = "";
+        String suffix = "";
+        String result = "";
         if (currentMove != null) {
-            notation.setPgnCode(currentMove.getPgnCode());
+            pgnCode = currentMove.getPgnCode();
             if (currentMove.getColor() == Color.WHITE) {
-                notation.setMoveNumber(currentMove.getMoveNumber());
+                moveNumber = currentMove.getMoveNumber();
             }
-            notation.setPrefix(currentMove.getMoveNumber() + ". " + (currentMove.getColor() == Color.BLACK ? "... " : ""));
+            prefix = currentMove.getMoveNumber() + ". " + (currentMove.getColor() == Color.BLACK ? "... " : "");
             if (game.isVariant(Constants.DARK) &&
                     (game.hasOppositeOrientation() && currentMove.getColor() == Color.WHITE ||
                             !game.hasOppositeOrientation() && currentMove.getColor() == Color.BLACK)) {
-                notation.setSuffix("?");
+                suffix = "?";
             } else {
-                String pgnCode = notation.getPgnCode();
-                notation.setSymbol(getSymbol(pgnCode.substring(0, 1), currentMove.getColor()));
-                notation.setSuffix(notation.getSymbol() == null ? pgnCode : pgnCode.substring(1));
+                symbol = getSymbol(pgnCode.substring(0, 1), currentMove.getColor());
+                suffix = symbol.isBlank() ? pgnCode : pgnCode.substring(1);
             }
             if (isFinished()) {
-                String result = getResult();
-                System.out.println("Result: " + result);
-                notation.setResult(" (" + result + ")");
+                String r = getResult();
+                System.out.println("Result: " + r);
+                result = " (" + r + ")";
             }
         }
-        return notation;
+        return new Notation(pgnCode, moveNumber, prefix, symbol, suffix, result);
     }
 
     private String getSymbol(String symbolCode, Color color) {
         boolean isWhite = color == Color.WHITE;
-        switch (symbolCode) {
-            case "N":
-                return isWhite ? "♘" : "♞";
-            case "B":
-                return isWhite ? "♗" : "♝";
-            case "R":
-                return isWhite ? "♖" : "♜";
-            case "Q":
-                return isWhite ? "♕" : "♛";
-            case "K":
-                return isWhite ? "♔" : "♚";
-            default:
-                return null;
-        }
+        return switch (symbolCode) {
+            case "N" -> isWhite ? "♘" : "♞";
+            case "B" -> isWhite ? "♗" : "♝";
+            case "R" -> isWhite ? "♖" : "♜";
+            case "Q" -> isWhite ? "♕" : "♛";
+            case "K" -> isWhite ? "♔" : "♚";
+            default -> "";
+        };
     }
 
     private boolean isValidSquare(int row, int column) {
