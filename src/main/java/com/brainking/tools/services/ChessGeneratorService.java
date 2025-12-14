@@ -20,13 +20,14 @@ import org.springframework.stereotype.Service;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -68,132 +69,151 @@ public class ChessGeneratorService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void renderChessVideo() {
-        String[] extensions = {"pgn"};
-        String processedFolder = sourceFolder + "/processed";
-        File input = new File(sourceFolder);
-        File archive = new File(processedFolder);
-        Collection<File> files = FileUtils.listFiles(input, extensions, false);
+        final String[] extensions = {"pgn"};
+        final String processedFolder = sourceFolder + "/processed";
+        final File input = new File(sourceFolder);
+        final File archive = new File(processedFolder);
+        final Collection<File> files = FileUtils.listFiles(input, extensions, false);
         if (CollectionUtils.isEmpty(files)) {
             LOG.info("No PGN files found.");
             return;
         }
         createFolders(input, archive);
         // TODO: setup YouTube OAuth 2 flow at the start
-        for (File pgnFile : files) {
-            Collection<File> existingFiles = FileUtils.listFiles(archive, FileFilterUtils.nameFileFilter(pgnFile.getName()), null);
+        for (final File pgnFile : files) {
+            final Collection<File> existingFiles = FileUtils.listFiles(archive, FileFilterUtils.nameFileFilter(pgnFile.getName()), null);
             if (!existingFiles.isEmpty()) {
                 LOG.info("File " + pgnFile.getName() + " already processed, deleting.");
                 try {
                     FileUtils.forceDelete(pgnFile);
-                } catch (Exception ex) {
+                } catch (IOException ex) {
                     LOG.error("Error deleting the file.", ex);
                 }
                 continue;
             }
-            long currentTime = System.currentTimeMillis();
+            final long currentTime = System.currentTimeMillis();
             try {
-                List<Move> moves = new ArrayList<>();
-                moves.add(new Move());  // blank first move to show the start position
-                Game game = importService.importPgn(pgnFile);
-                int squareSize = Constants.getSquareSize(game);
-                Map<String, BufferedImage> whitePieceMap = renderService.getBufferedImageMap(renderService.getImageResourceMap("White"), squareSize);
-                Map<String, BufferedImage> blackPieceMap = renderService.getBufferedImageMap(renderService.getImageResourceMap("Black"), squareSize);
+                final Game game = importService.importPgn(pgnFile);
+                final List<Move> moves = new ArrayList<>();
+                final int squareSize = Constants.getSquareSize(game);
+                final Map<String, BufferedImage> whitePieceMap = renderService.getBufferedImageMap(renderService.getImageResourceMap("White"), squareSize);
+                final Map<String, BufferedImage> blackPieceMap = renderService.getBufferedImageMap(renderService.getImageResourceMap("Black"), squareSize);
                 game.addPieceMaps(whitePieceMap, blackPieceMap);
+                moves.add(new Move());  // blank first move to show the start position
                 moves.addAll(game.getMoves());
-                Position position = positionService.generateStartPosition(game);
-                String videoFolder = targetFolder + (StringUtils.isNotBlank(game.getVariant()) ? "/" + game.getVariant() : "");
+                final Position position = positionService.generateStartPosition(game);
+                final String videoFolder = targetFolder + (StringUtils.isNotBlank(game.getVariant()) ? "/" + game.getVariant() : "");
                 LOG.info("Rendering the video to " + videoFolder);
                 FileUtils.forceMkdir(new File(videoFolder));
-                String videoName = game.getName();
+                final String videoName = game.getName();
                 if (generateVideo) {
-                    FileWriter metadataWriter = new FileWriter(videoFolder + "/" + videoName + ".txt", false);
-                    metadataWriter.write(", " + game.getResult() + "\n");
-                    metadataWriter.write("Visit my chess blog: https://LookIntoChess.com\n");
-                    metadataWriter.write("\n");
-                    metadataWriter.write("Played on BrainKing.com (" + game.getWhite() + " vs. " + game.getBlack() + "), " + game.getFormattedDate().orElse("") + "\n");
-                    metadataWriter.write("\n");
-                    metadataWriter.write(game.getPgnCode() + "\n");
-                    metadataWriter.close();
+                    writeMetadata(game, videoFolder, videoName);
                 }
                 AWTSequenceEncoder encoder = null;
                 if (generateVideo) {
                     encoder = AWTSequenceEncoder.create25Fps(new File(videoFolder, videoName + ".mov"));
                 }
-                List<Move> processedMoves = new ArrayList<>();
-                for (Move move : moves) {
-                    processedMoves.add(move);
-                    // mark target square for Ambiguous Chess
-                    if (encoder != null) {
-                        if (game.isVariant(Constants.AMBIGUOUS)) {
-                            position.markTargetSquare(move);
-                            for (int i = 0; i < Constants.FRAMES_TO_SHOW_TARGET; i++) {
-                                BufferedImage image = renderService.getRenderedImage(game, position, processedMoves);
-                                encoder.encodeImage(image);
-                            }
-                        }
-                    }
-                    position.startMoving(move);
-                    while (position.isMoving()) {
-                        position.doMoveStep();
-                        if (encoder != null) {
-                            BufferedImage image = renderService.getRenderedImage(game, position, processedMoves);
-                            encoder.encodeImage(image);
-                        }
-                    }
-                    position.stopMoving();
-                    // save screenshot
-                    if (move.getScreenshotId() != null) {
-                        BufferedImage image = renderService.getScreenshot(game, position);
-                        String screenshotName = videoName + "-" + move.getScreenshotId() + ".png";
-                        ImageIO.write(image, "png", new File(videoFolder, screenshotName));
-                        LOG.info("Screenshot " + screenshotName + " saved to " + videoFolder);
-                    }
-                    // add ten times the last frame to set a delay between moves
-                    if (encoder != null) {
-                        BufferedImage image = renderService.getRenderedImage(game, position, processedMoves);
-                        for (int i = 0; i < Constants.FRAMES_BETWEEN_MOVES; i++) {
-                            encoder.encodeImage(image);
-                        }
-                    }
-                }
-                position.finishGame();
+                final List<Move> processedMoves = getProcessedMoves(encoder, game, position, moves, videoFolder, videoName);
                 // display result and keep it for 10 seconds
                 if (encoder != null) {
                     LOG.info("Rendering the final screen");
-                    BufferedImage image = renderService.getRenderedImage(game, position, processedMoves);
+                    final BufferedImage image = renderService.getRenderedImage(game, position, processedMoves);
                     for (int i = 0; i < Constants.FRAMES_AFTER_LAST_MOVE; i++) {
                         encoder.encodeImage(image);
                     }
                     encoder.finish();
                     LOG.info("Converting to MP4");
-                    String pathToVideo = encoderService.convertToMP4(videoFolder, videoName);
+                    final String pathToVideo = encoderService.convertToMP4(videoFolder, videoName);
                     LOG.info("Video " + pathToVideo + " completed in " +
-                            (new SimpleDateFormat("mm:ss")).format(new Date(System.currentTimeMillis() - currentTime)) +
+                            new SimpleDateFormat("mm:ss", Locale.ENGLISH). format(System.currentTimeMillis() - currentTime) +
                             " minutes");
                     LOG.info("Archiving file " + pgnFile + " to " + processedFolder);
                     FileUtils.moveFileToDirectory(pgnFile, archive, true);
                     if (youTubeExportActive) {
                         // TODO: https://explorer.lichess.ovh/master?fen=<fenCode>
                         LOG.info("Uploading video " + pathToVideo + " to YouTube");
-                        String youTubeId = youTubeService.uploadVideo(game, pathToVideo);
+                        final String youTubeId = youTubeService.uploadVideo(game, pathToVideo);
                         LOG.info("Video " + pathToVideo + " uploaded with ID = " + youTubeId);
                         LOG.info("SQL command (bk20 database): insert into game_external (game_id, you_tube_id) values (" +
                                 game.getName() + ", '" + youTubeId + "');");
                     }
                 }
-            } catch (Exception ex) {
+            } catch (IOException ex) {
                 LOG.error("Error rendering the video.", ex);
             }
         }
     }
 
-    private void createFolders(File input, File archive) {
+    private void createFolders(final File input, final File archive) {
         try {
             FileUtils.forceMkdir(input);
             FileUtils.forceMkdir(archive);
         } catch (IOException ex) {
             LOG.error("Error creating folders.", ex);
         }
+    }
+
+    private void writeMetadata(final Game game, final String videoFolder, final String videoName) throws IOException {
+        final String content = """
+                {result}
+                Visit my chess blog: https://LookIntoChess.com
+
+                Played on BrainKing.com ({white} vs. {black}), {date}
+
+                {pgn}
+                """
+                .replace("{result}", game.getResult())
+                .replace("{white}", game.getWhite())
+                .replace("{black}", game.getBlack())
+                .replace("{date}", game.getFormattedDate().orElse(""))
+                .replace("{pgn}", game.getPgnCode());
+        Files.writeString(Path.of(videoFolder, videoName + ".txt"), content);
+    }
+
+    private List<Move> getProcessedMoves(
+        final AWTSequenceEncoder encoder,
+        final Game game,
+        final Position position,
+        final List<Move> moves,
+        final String videoFolder,
+        final String videoName) throws IOException {
+        final List<Move> processedMoves = new ArrayList<>();
+        for (final Move move : moves) {
+            processedMoves.add(move);
+            // mark target square for Ambiguous Chess
+            if (encoder != null && game.isVariant(Constants.AMBIGUOUS)) {
+                position.markTargetSquare(move);
+                for (int i = 0; i < Constants.FRAMES_TO_SHOW_TARGET; i++) {
+                    final BufferedImage image = renderService.getRenderedImage(game, position, processedMoves);
+                    encoder.encodeImage(image);
+                }
+            }
+            position.startMoving(move);
+            while (position.isMoving()) {
+                position.doMoveStep();
+                if (encoder != null) {
+                    final BufferedImage image = renderService.getRenderedImage(game, position, processedMoves);
+                    encoder.encodeImage(image);
+                }
+            }
+            position.stopMoving();
+            // save screenshot
+            if (move.getScreenshotId() != null) {
+                final BufferedImage image = renderService.getScreenshot(game, position);
+                final String screenshotName = videoName + "-" + move.getScreenshotId() + ".png";
+                ImageIO.write(image, "png", new File(videoFolder, screenshotName));
+                LOG.info("Screenshot " + screenshotName + " saved to " + videoFolder);
+            }
+            // add ten times the last frame to set a delay between moves
+            if (encoder != null) {
+                final BufferedImage image = renderService.getRenderedImage(game, position, processedMoves);
+                for (int i = 0; i < Constants.FRAMES_BETWEEN_MOVES; i++) {
+                    encoder.encodeImage(image);
+                }
+            }
+        }
+        position.finishGame();
+        return processedMoves;
     }
 
 }
