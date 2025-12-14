@@ -28,7 +28,7 @@
 </rule>
 <rule ref="category/java/codestyle.xml/LongVariable">
     <properties>
-        <property name="minimum" value="20" />
+        <property name="minimum" value="25" />
     </properties>
 </rule>
 

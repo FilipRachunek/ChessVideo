@@ -1,11 +1,13 @@
 package com.brainking.tools.dto;
 
+import java.util.Arrays;
+
 public enum Type {
 
     KING("K", true, true) {
         @Override
         public int[][] getMoveDirectionArray() {
-            return KING_MOVE_DIRECTION;
+            return Arrays.copyOf(KING_MOVE_DIRECTION, KING_MOVE_DIRECTION.length);
         }
 
         @Override
@@ -16,7 +18,7 @@ public enum Type {
     QUEEN("Q", true, true) {
         @Override
         public int[][] getMoveDirectionArray() {
-            return QUEEN_MOVE_DIRECTION;
+            return Arrays.copyOf(QUEEN_MOVE_DIRECTION, QUEEN_MOVE_DIRECTION.length);
         }
 
         @Override
@@ -27,7 +29,7 @@ public enum Type {
     ROOK("R", true, true) {
         @Override
         public int[][] getMoveDirectionArray() {
-            return ROOK_MOVE_DIRECTION;
+            return Arrays.copyOf(ROOK_MOVE_DIRECTION, ROOK_MOVE_DIRECTION.length);
         }
 
         @Override
@@ -38,7 +40,7 @@ public enum Type {
     BISHOP("B", true, true) {
         @Override
         public int[][] getMoveDirectionArray() {
-            return BISHOP_MOVE_DIRECTION;
+            return Arrays.copyOf(BISHOP_MOVE_DIRECTION, BISHOP_MOVE_DIRECTION.length);
         }
 
         @Override
@@ -49,7 +51,7 @@ public enum Type {
     KNIGHT("N", true, true) {
         @Override
         public int[][] getMoveDirectionArray() {
-            return KNIGHT_MOVE_DIRECTION;
+            return Arrays.copyOf(KNIGHT_MOVE_DIRECTION, KNIGHT_MOVE_DIRECTION.length);
         }
 
         @Override
@@ -60,7 +62,7 @@ public enum Type {
     PAWN("p", true, true) {
         @Override
         public int[][] getMoveDirectionArray() {
-            return null;  // special rules
+            return new int[0][];  // special rules
         }
 
         @Override
@@ -71,7 +73,7 @@ public enum Type {
     ARCHBISHOP("A", true, true) {
         @Override
         public int[][] getMoveDirectionArray() {
-            return ARCHBISHOP_MOVE_DIRECTION;
+            return Arrays.copyOf(ARCHBISHOP_MOVE_DIRECTION, ARCHBISHOP_MOVE_DIRECTION.length);
         }
 
         @Override
@@ -82,7 +84,7 @@ public enum Type {
     CHANCELLOR("C", true, true) {
         @Override
         public int[][] getMoveDirectionArray() {
-            return CHANCELLOR_MOVE_DIRECTION;
+            return Arrays.copyOf(CHANCELLOR_MOVE_DIRECTION, CHANCELLOR_MOVE_DIRECTION.length);
         }
 
         @Override
@@ -93,7 +95,7 @@ public enum Type {
     JANUS("J", true, true) {
         @Override
         public int[][] getMoveDirectionArray() {
-            return ARCHBISHOP_MOVE_DIRECTION;
+            return Arrays.copyOf(ARCHBISHOP_MOVE_DIRECTION, ARCHBISHOP_MOVE_DIRECTION.length);
         }
 
         @Override
@@ -158,7 +160,7 @@ public enum Type {
     private final boolean playable;
     private final boolean visible;
 
-    Type(String code, boolean playable, boolean visible) {
+    Type(final String code, final boolean playable, final boolean visible) {
         this.code = code;
         this.playable = playable;
         this.visible = visible;
@@ -176,13 +178,14 @@ public enum Type {
         return visible;
     }
 
-    public static Type findByCode(String code) {
-        for (Type value : values()) {
+    public static Type findByCode(final String code) {
+        Type result = null;
+        for (final Type value : values()) {
             if (value.code.equalsIgnoreCase(code)) {
-                return value;
+                result = value;
             }
         }
-        return null;
+        return result;
     }
 
     public abstract int[][] getMoveDirectionArray();
