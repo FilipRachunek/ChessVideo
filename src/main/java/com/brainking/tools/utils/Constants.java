@@ -52,23 +52,23 @@ public class Constants {
     public static final String CAPABLANCA_RANDOM = "Capablanca Random";
     public static final String DARK = "Dark";
 
-    public static int getSquareSize(Game game) {
+    public static int getSquareSize(final Game game) {
         return BOARD_SIZE / Math.max(game.getWidth(), game.getHeight());
     }
 
-    public static int getCapturedPieceSize(Game game) {
+    public static int getCapturedPieceSize(final Game game) {
         return getSquareSize(game) / 2;
     }
 
-    public static int getBoardX(Game game) {
+    public static int getBoardX(final Game game) {
         return VIDEO_WIDTH / 2 - getSquareSize(game) * game.getWidth() / 2;
     }
 
-    public static int getBoardY(Game game) {
+    public static int getBoardY(final Game game) {
         return VIDEO_HEIGHT / 2 - getSquareSize(game) * game.getHeight() / 2;
     }
 
-    public static int getScreenshotBoardY(Game game) {
+    public static int getScreenshotBoardY(final Game game) {
         return SCREENSHOT_HEIGHT / 2 - getSquareSize(game) * game.getHeight() / 2;
     }
 

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.batik.anim.dom.SVGDOMImplementation;
+import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.TranscodingHints;
@@ -18,9 +19,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
+@SuppressWarnings("PMD.LooseCoupling")
 public class SvgService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SvgService.class);
+    private static final String FOLDER = "/images/chess/";
 
     private BufferedImage getImageFromSvg(final InputStream svgFileStream, final int squareSize) {
         final BufferedImage[] bufferedImage = new BufferedImage[1];
@@ -29,18 +32,18 @@ public class SvgService {
             final TranscoderInput input = new TranscoderInput(svgFileStream);
             final ImageTranscoder imageTranscoder = new ImageTranscoder() {
                 @Override
-                public BufferedImage createImage(int w, int h) {
-                    return new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+                public BufferedImage createImage(final int width, final int height) {
+                    return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
                 }
 
                 @Override
-                public void writeImage(BufferedImage image, TranscoderOutput out) {
+                public void writeImage(final BufferedImage image, TranscoderOutput out) {
                     bufferedImage[0] = image;
                 }
             };
             imageTranscoder.setTranscodingHints(transcodingHints);
             imageTranscoder.transcode(input, null);
-        } catch (Exception ex) {
+        } catch (TranscoderException | URISyntaxException ex) {
             LOG.error("Error converting the image from SVG.", ex);
         }
         return bufferedImage[0];
@@ -74,15 +77,15 @@ public class SvgService {
 
     public Map<String, String> getImageResourceMap(final String prefix) {
         final Map<String, String> map = new HashMap<>();
-        map.put("K", "/images/chess/" + prefix + "King.svg");
-        map.put("Q", "/images/chess/" + prefix + "Queen.svg");
-        map.put("R", "/images/chess/" + prefix + "Rook.svg");
-        map.put("B", "/images/chess/" + prefix + "Bishop.svg");
-        map.put("N", "/images/chess/" + prefix + "Knight.svg");
-        map.put("p", "/images/chess/" + prefix + "Pawn.svg");
-        map.put("A", "/images/chess/" + prefix + "Archbishop.svg");
-        map.put("C", "/images/chess/" + prefix + "Chancellor.svg");
-        map.put("J", "/images/chess/" + prefix + "Archbishop.svg");
+        map.put("K", FOLDER + prefix + "King.svg");
+        map.put("Q", FOLDER + prefix + "Queen.svg");
+        map.put("R", FOLDER + prefix + "Rook.svg");
+        map.put("B", FOLDER + prefix + "Bishop.svg");
+        map.put("N", FOLDER + prefix + "Knight.svg");
+        map.put("p", FOLDER + prefix + "Pawn.svg");
+        map.put("A", FOLDER + prefix + "Archbishop.svg");
+        map.put("C", FOLDER + prefix + "Chancellor.svg");
+        map.put("J", FOLDER + prefix + "Archbishop.svg");
         return map;
     }
 

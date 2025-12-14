@@ -46,6 +46,7 @@
     <exclude name="NcssCount"/>
     <exclude name="CognitiveComplexity"/>
     <exclude name="CyclomaticComplexity"/>
+    <exclude name="ExcessiveImports"/>
   </rule>
 
 <rule ref="category/java/design.xml/NcssCount">
@@ -59,6 +60,12 @@
 <rule ref="category/java/design.xml/CognitiveComplexity">
     <properties>
         <property name="reportLevel" value="100" />
+    </properties>
+</rule>
+
+<rule ref="category/java/design.xml/ExcessiveImports">
+    <properties>
+        <property name="minimum" value="35" />
     </properties>
 </rule>
 

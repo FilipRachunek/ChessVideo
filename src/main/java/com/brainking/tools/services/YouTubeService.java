@@ -25,16 +25,17 @@ import org.springframework.stereotype.Service;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.util.Collection;
 import java.util.Collections;
 
 @Service
+@SuppressWarnings("PMD.LooseCoupling")
 public class YouTubeService {
 
     private static final Logger LOG = LoggerFactory.getLogger(YouTubeService.class);
@@ -46,9 +47,9 @@ public class YouTubeService {
     private final String clientSecretsFile;
     private final String channelId;
 
-    public YouTubeService(@Value("${youtube.api.key}") String apiKey,
-                        @Value("${youtube.client.secrets.file}") String clientSecretsFile,
-                        @Value("${youtube.channel.id}") String channelId) {
+    public YouTubeService(@Value("${youtube.api.key}") final String apiKey,
+                        @Value("${youtube.client.secrets.file}") final String clientSecretsFile,
+                        @Value("${youtube.channel.id}") final String channelId) {
         this.apiKey = apiKey;
         this.clientSecretsFile = clientSecretsFile;
         this.channelId = channelId;
@@ -56,64 +57,69 @@ public class YouTubeService {
 
     public void listChannel() {
         try {
-            YouTube youTube = getClient(apiKey);
-            YouTube.Channels.List request = youTube.channels()
+            final YouTube youTube = getClient(apiKey);
+            final YouTube.Channels.List request = youTube.channels()
                     .list("snippet,contentDetails,statistics");
-            ChannelListResponse response = request.setId(channelId).execute();
+            final ChannelListResponse response = request.setId(channelId).execute();
             LOG.info(response.toString());
-        } catch (Exception ex) {
+        } catch (GeneralSecurityException | IOException ex) {
             LOG.error("Error listing the YouTube channel.", ex);
         }
     }
 
-    public String uploadVideo(Game game, String pathToVideo) {
+    public String uploadVideo(final Game game, final String pathToVideo) {
+        String videoId = "";
         try {
-            YouTube youTube = getClient(null);
-            Video video = new Video();
-            VideoSnippet snippet = new VideoSnippet();
+            final YouTube youTube = getClient(null);
+            final Video video = new Video();
+            final VideoSnippet snippet = new VideoSnippet();
             snippet.setChannelId(channelId);
             snippet.setTitle(game.getDate() + " (" + game.getWhite() + " vs " + game.getBlack() + ")");
             snippet.setDescription("Played on BrainKing.com");
             video.setSnippet(snippet);
-            VideoStatus status = new VideoStatus();
+            final VideoStatus status = new VideoStatus();
             status.setPrivacyStatus("private");
             video.setStatus(status);
-            File mediaFile = new File(pathToVideo);
-            InputStreamContent mediaContent =
+            final File mediaFile = new File(pathToVideo);
+            final InputStreamContent mediaContent =
                     new InputStreamContent("application/octet-stream",
                             new BufferedInputStream(Files.newInputStream(mediaFile.toPath())));
             mediaContent.setLength(mediaFile.length());
-            YouTube.Videos.Insert request = youTube.videos()
+            final YouTube.Videos.Insert request = youTube.videos()
                     .insert("snippet,status", video, mediaContent);
-            Video response = request.execute();
-            return response.getId();
-        } catch (Exception ex) {
+            final Video response = request.execute();
+            videoId = response.getId();
+        } catch (GeneralSecurityException | IOException ex) {
             LOG.error("Error uploading the video to YouTube.", ex);
-            return null;
         }
+        return videoId;
     }
 
-    private YouTube getClient(String apiKey) throws GeneralSecurityException, IOException {
+    private YouTube getClient(final String apiKey) throws GeneralSecurityException, IOException {
+        final YouTube youTube;
         final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
         if (apiKey != null) {
-            return new YouTube.Builder(httpTransport, JSON_FACTORY, null)
+            youTube = new YouTube.Builder(httpTransport, JSON_FACTORY, null)
                     .setApplicationName(APPLICATION_NAME)
                     .setYouTubeRequestInitializer(new YouTubeRequestInitializer(apiKey))
                     .build();
+        } else {
+        final Credential credential = authorize(httpTransport);
+            youTube = new YouTube.Builder(httpTransport, JSON_FACTORY, credential)
+                    .setApplicationName(APPLICATION_NAME)
+                    .build();
         }
-        Credential credential = authorize(httpTransport);
-        return new YouTube.Builder(httpTransport, JSON_FACTORY, credential)
-                .setApplicationName(APPLICATION_NAME)
-                .build();
+        return youTube;
     }
 
     private Credential authorize(final NetHttpTransport httpTransport) throws IOException {
-        InputStream inputStream = new FileInputStream(clientSecretsFile);
-        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(inputStream));
-        GoogleAuthorizationCodeFlow flow =
-                new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY, clientSecrets, SCOPES)
-                        .build();
-        return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
+        try (InputStream inputStream = Files.newInputStream(Path.of(clientSecretsFile))) {
+            final GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(inputStream, "UTF-8"));
+            final GoogleAuthorizationCodeFlow flow =
+                    new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY, clientSecrets, SCOPES)
+                            .build();
+            return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
+        }
     }
 
 }
