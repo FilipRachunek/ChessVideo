@@ -74,6 +74,14 @@ public class Move {
         return pgnCode;
     }
 
+    public int[][] getMoveDirectionArray() {
+        return type.getMoveDirectionArray();
+    }
+
+    public int getMaxMoveDistance() {
+        return type.getMaxMoveDistance();
+    }
+
     public Type getType() {
         return type;
     }
@@ -89,6 +97,14 @@ public class Move {
 
     public boolean isPawn() {
         return type == Type.PAWN;
+    }
+
+    public boolean isKing() {
+        return type == Type.KING;
+    }
+
+    public boolean isKnightLikeType() {
+        return type == Type.ARCHBISHOP || type == Type.CHANCELLOR || type == Type.JANUS;
     }
 
     public Color getColor() {

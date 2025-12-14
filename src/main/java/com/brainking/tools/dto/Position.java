@@ -717,59 +717,71 @@ public class Position {
     }
 
     private void addSourceSquareForPiece(final Move move) {
-        final Type type = move.getRelayedType();
         final Color color = move.getColor();
-        final int[][] moveDirectionArray = type.getMoveDirectionArray();
-        int maxMoveDistance = type.getMaxMoveDistance();
-        if (game.isVariant(Constants.CHESHIRE_CAT) && type == Type.KING && !kingMoved.get(color)) {
+        final int[][] moveDirectionArray = move.getMoveDirectionArray();
+        int maxMoveDistance = move.getMaxMoveDistance();
+        if (game.isVariant(Constants.CHESHIRE_CAT) && move.isKing() && !kingMoved.get(color)) {
             // Cheshire Cat king can make the first move as a queen
             maxMoveDistance = Type.QUEEN.getMaxMoveDistance();
             kingMoved.put(color, true);
         }
         for (final int[] array : moveDirectionArray) {
-            if (type == Type.ARCHBISHOP || type == Type.CHANCELLOR || type == Type.JANUS) {
+            if (move.isKnightLikeType()) {
                 // knight-like moves always have a fixed distance
-                maxMoveDistance = Math.abs(array[0]) == 2 || Math.abs(array[1]) == 2 ? 1 : type.getMaxMoveDistance();
+                maxMoveDistance = Math.abs(array[0]) == 2 || Math.abs(array[1]) == 2 ? 1 : move.getMaxMoveDistance();
             }
-            boolean directionSearch = true;
-            for (int distance = 1; distance <= maxMoveDistance && directionSearch; distance++) {
-                final int testRow = move.toRow + array[0] * distance;
-                final int testColumn = move.toColumn + array[1] * distance;
-                if (isValidSquare(testRow, testColumn)) {
-                    // check pre-filled fromRow or fromColumn
-                    if ((move.fromRow == -1 || move.fromRow == testRow) &&
-                            (move.fromColumn == -1 || move.fromColumn == testColumn) &&
-                            pieceGrid[testRow][testColumn] != null &&
-                            !pieceGrid[testRow][testColumn].hasType(Type.HOLE)) {
-                        if (pieceGrid[testRow][testColumn].hasType(move.getType()) &&
-                                pieceGrid[testRow][testColumn].hasColor(color)) {
-                            boolean pieceFound = true;
-                            if (move.isRelayed()) {
-                                // find relayed knight
-                                pieceFound = false;
-                                for (final int[] knightArray : Type.KNIGHT.getMoveDirectionArray()) {
-                                    final int knightRow = testRow + knightArray[0];
-                                    final int knightColumn = testColumn + knightArray[1];
-                                    if (isValidSquare(knightRow, knightColumn) &&
-                                            pieceGrid[knightRow][knightColumn] != null &&
-                                            pieceGrid[knightRow][knightColumn].hasType(Type.KNIGHT) &&
-                                            pieceGrid[knightRow][knightColumn].hasColor(color)) {
-                                        pieceFound = true;
-                                    }
-                                }
-                            }
-                            if (pieceFound) {
-                                move.fromRow = testRow;
-                                move.fromColumn = testColumn;
-                                directionSearch = false;
-                            }
-                        } else {
-                            directionSearch = false;
-                        }
-                    }
+            findSourcePiece(move, array, maxMoveDistance);
+        }
+    }
+
+    private void findSourcePiece(final Move move, final int[] array, final int maxMoveDistance) {
+        boolean directionSearch = true;
+        for (int distance = 1; distance <= maxMoveDistance && directionSearch; distance++) {
+            final int testRow = move.toRow + array[0] * distance;
+            final int testColumn = move.toColumn + array[1] * distance;
+            if (isValidSquare(testRow, testColumn) &&
+                (move.fromRow == -1 || move.fromRow == testRow) &&
+                (move.fromColumn == -1 || move.fromColumn == testColumn) &&
+                pieceGrid[testRow][testColumn] != null &&
+                !pieceGrid[testRow][testColumn].hasType(Type.HOLE)) {
+                    directionSearch = testSquare(move, testRow, testColumn);
+            }
+        }
+    }
+
+    private boolean testSquare(final Move move, final int testRow, final int testColumn) {
+        boolean continueSearch = true;
+        if (pieceGrid[testRow][testColumn].hasType(move.getType()) &&
+                pieceGrid[testRow][testColumn].hasColor(move.getColor())) {
+            final boolean pieceFound = isPieceFound(move, testRow, testColumn);
+            if (pieceFound) {
+                move.fromRow = testRow;
+                move.fromColumn = testColumn;
+                continueSearch = false;
+            }
+        } else {
+            continueSearch = false;
+        }
+        return continueSearch;
+    }
+
+    private boolean isPieceFound(final Move move, final int testRow, final int testColumn) {
+        boolean pieceFound = true;
+        if (move.isRelayed()) {
+            // find relayed knight
+            pieceFound = false;
+            for (final int[] knightArray : Type.KNIGHT.getMoveDirectionArray()) {
+                final int knightRow = testRow + knightArray[0];
+                final int knightColumn = testColumn + knightArray[1];
+                if (isValidSquare(knightRow, knightColumn) &&
+                        pieceGrid[knightRow][knightColumn] != null &&
+                        pieceGrid[knightRow][knightColumn].hasType(Type.KNIGHT) &&
+                        pieceGrid[knightRow][knightColumn].hasColor(move.getColor())) {
+                    pieceFound = true;
                 }
             }
         }
+        return pieceFound;
     }
 
 }
