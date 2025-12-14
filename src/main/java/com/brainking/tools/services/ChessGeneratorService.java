@@ -96,8 +96,8 @@ public class ChessGeneratorService {
                 final Game game = importService.importPgn(pgnFile);
                 final List<Move> moves = new ArrayList<>();
                 final int squareSize = Constants.getSquareSize(game);
-                final Map<String, BufferedImage> whitePieceMap = renderService.getBufferedImageMap(renderService.getImageResourceMap("White"), squareSize);
-                final Map<String, BufferedImage> blackPieceMap = renderService.getBufferedImageMap(renderService.getImageResourceMap("Black"), squareSize);
+                final Map<String, BufferedImage> whitePieceMap = renderService.getBufferedImageMap("White", squareSize);
+                final Map<String, BufferedImage> blackPieceMap = renderService.getBufferedImageMap("Black", squareSize);
                 game.addPieceMaps(whitePieceMap, blackPieceMap);
                 moves.add(new Move());  // blank first move to show the start position
                 moves.addAll(game.getMoves());
