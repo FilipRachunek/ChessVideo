@@ -57,6 +57,8 @@
 </rule>
 
   <!-- Performance -->
-  <rule ref="category/java/performance.xml"/>
+<rule ref="category/java/performance.xml">
+    <exclude name="AvoidInstantiatingObjectsInLoops"/>
+</rule>
 
 </ruleset>

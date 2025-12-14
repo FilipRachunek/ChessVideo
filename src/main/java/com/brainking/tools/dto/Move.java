@@ -78,12 +78,25 @@ public class Move {
         return type;
     }
 
+    public boolean isCastlingType(final String variant) {
+        return Constants.KNIGHTMATE.equals(variant) && type == Type.KNIGHT ||
+                !Constants.KNIGHTMATE.equals(variant) && type == Type.KING;
+    }
+
+    public boolean isPawn() {
+        return type == Type.PAWN;
+    }
+
     public Color getColor() {
         return color;
     }
 
     public boolean isWhite() {
         return color == Color.WHITE;
+    }
+
+    public boolean isBlack() {
+        return color == Color.BLACK;
     }
 
     public Color getOppositeColor() {

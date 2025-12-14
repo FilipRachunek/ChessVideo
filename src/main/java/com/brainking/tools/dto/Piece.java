@@ -112,6 +112,14 @@ public class Piece {
         return type;
     }
 
+    public boolean isPawn() {
+        return type == Type.PAWN;
+    }
+
+    public boolean isHole() {
+        return type == Type.HOLE;
+    }
+
     public boolean hasType(final Type type) {
         return this.type == type;
     }
@@ -126,6 +134,14 @@ public class Piece {
 
     public boolean isPlayable() {
         return type.isPlayable();
+    }
+
+    public int[][] getMoveDirectionArray() {
+        return type.getMoveDirectionArray();
+    }
+
+    public int getMaxMoveDistance() {
+        return type.getMaxMoveDistance();
     }
 
     @Override

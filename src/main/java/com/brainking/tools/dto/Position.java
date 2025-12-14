@@ -3,12 +3,15 @@ package com.brainking.tools.dto;
 import com.brainking.tools.utils.Constants;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,9 +25,9 @@ public class Position {
     private Move currentMove;
     private int targetRow;
     private int targetColumn;
-    private final Map<Color, List<Piece>> capturedPieces = new HashMap<>();
-    private final Map<Color, Integer> checkCounter = new HashMap<>();
-    private final Map<Color, Boolean> kingMoved = new HashMap<>();
+    private final Map<Color, List<Piece>> capturedPieces = new EnumMap<>(Color.class);
+    private final Map<Color, Integer> checkCounter = new EnumMap<>(Color.class);
+    private final Map<Color, Boolean> kingMoved = new EnumMap<>(Color.class);
     private boolean finished;
 
     public Position(final Game game) {
@@ -47,7 +50,7 @@ public class Position {
     }
 
     public Piece[][] getPieceGrid() {
-        return pieceGrid;
+        return Arrays.copyOf(pieceGrid, pieceGrid.length);
     }
 
     public void addPiece(final Piece piece, final int row, final int column) {
@@ -76,14 +79,7 @@ public class Position {
         if (move.isAmbiguous() || move.isPlace()) {
             LOG.info(move.toString());
             currentMove = Move.from(move);
-            if (move.isPlace()) {
-                for (Piece piece : capturedPieces.get(currentMove.getOppositeColor())) {
-                    if (piece.hasType(currentMove.getType())) {
-                        piece.setTargetXYAndSteps(game, currentMove.toColumn, currentMove.toRow);
-                        return;
-                    }
-                }
-            }
+            handlePlacingMoveStart(move);
             return;
         }
         // stop marking target square for Ambiguous Chess
@@ -96,59 +92,7 @@ public class Position {
             currentMove = Move.from(move);
             // calculate frame steps
             pieceGrid[move.fromRow][move.fromColumn].setTargetXYAndSteps(game, move.toColumn, move.toRow);
-            // handle castling
-            Type castlingType = game.isVariant(Constants.KNIGHTMATE) ? Type.KNIGHT : Type.KING;
-            if (move.getType() == castlingType) {
-                int rookFromRow = move.fromRow;
-                int rookFromColumn = -1;
-                int rookToRow = move.toRow;
-                int rookToColumn = -1;
-                if ((game.isVariant(Constants.FISCHER_RANDOM) || game.isVariant(Constants.CAPABLANCA_RANDOM)) &&
-                        (move.isCastlingShort() || move.isCastlingLong())) {
-                    // find the king column
-                    for (int column = 0; column < game.getWidth() - 1; column++) {
-                        if (pieceGrid[move.fromRow][column] != null &&
-                                pieceGrid[move.fromRow][column].hasType(Type.KING)) {
-                            move.fromColumn = column;
-                        }
-                    }
-                }
-                if (move.isCastlingLong()) {
-                    // O-O-O
-                    rookFromColumn = game.isVariant(Constants.EMBASSY) || game.isVariant(Constants.JANUS) ? game.getWidth() - 1 : 0;
-                    if (game.isVariant(Constants.FISCHER_RANDOM) || game.isVariant(Constants.CAPABLANCA_RANDOM)) {
-                        // find the rook column
-                        for (int column = 0; column < move.fromColumn; column++) {
-                            if (pieceGrid[move.fromRow][column] != null &&
-                                    pieceGrid[move.fromRow][column].hasType(Type.ROOK)) {
-                                rookFromColumn = column;
-                            }
-                        }
-                    }
-                    rookToColumn = game.isVariant(Constants.EMBASSY) ? 6 : 3;
-                    if (game.isVariant(Constants.JANUS)) {
-                        rookToColumn = 7;
-                    }
-                } else if (move.isCastlingShort()) {
-                    // O-O
-                    rookFromColumn = game.isVariant(Constants.EMBASSY) || game.isVariant(Constants.JANUS) ? 0 : game.getWidth() - 1;
-                    if (game.isVariant(Constants.FISCHER_RANDOM) || game.isVariant(Constants.CAPABLANCA_RANDOM)) {
-                        // find the rook column
-                        for (int column = move.fromColumn + 1; column < game.getWidth(); column++) {
-                            if (pieceGrid[move.fromRow][column] != null &&
-                                    pieceGrid[move.fromRow][column].hasType(Type.ROOK)) {
-                                rookFromColumn = column;
-                            }
-                        }
-                    }
-                    rookToColumn = game.isVariant(Constants.EMBASSY) || game.isVariant(Constants.JANUS) ? 2 : 5;
-                }
-                if (rookFromColumn >= 0) {
-                    pieceGrid[rookToRow][rookToColumn] = pieceGrid[rookFromRow][rookFromColumn];
-                    pieceGrid[rookToRow][rookToColumn].setTargetXYAndSteps(game, rookToColumn, rookToRow);
-                    pieceGrid[rookFromRow][rookFromColumn] = null;
-                }
-            }
+            handleCastling(move);
         }
     }
 
@@ -159,34 +103,37 @@ public class Position {
     }
 
     public boolean matchesPieceInCheck(final int row, final int column) {
-        Type type = game.isVariant(Constants.KNIGHTMATE) ? Type.KNIGHT : Type.KING;
+        final Type type = game.isVariant(Constants.KNIGHTMATE) ? Type.KNIGHT : Type.KING;
         return currentMove != null &&
                 currentMove.isCheck() &&
                 pieceGrid[row][column] != null &&
                 pieceGrid[row][column].hasType(type) &&
-                pieceGrid[row][column].hasColor(currentMove.getColor() == Color.WHITE ? Color.BLACK : Color.WHITE);
+                pieceGrid[row][column].hasColor(currentMove.getOppositeColor());
     }
 
     public boolean matchesHole(final int row, final int column) {
-        return pieceGrid[row][column] != null && pieceGrid[row][column].getType() == Type.HOLE;
+        return pieceGrid[row][column] != null && pieceGrid[row][column].isHole();
     }
 
     public boolean isMoving() {
+        boolean moving = false;
         for (int i = 0; i < game.getHeight(); i++) {
             for (int j = 0; j < game.getWidth(); j++) {
                 if (pieceGrid[i][j] != null && pieceGrid[i][j].isMoving()) {
-                    return true;
+                    moving = true;
+                    break;
                 }
             }
         }
-        for (Color color : Color.values()) {
-            for (Piece piece : capturedPieces.get(color)) {
+        for (final Color color : Color.values()) {
+            for (final Piece piece : capturedPieces.get(color)) {
                 if (piece.isMoving()) {
-                    return true;
+                    moving = true;
+                    break;
                 }
             }
         }
-        return false;
+        return moving;
     }
 
     public void doMoveStep() {
@@ -197,8 +144,8 @@ public class Position {
                 }
             }
         }
-        for (Color color : Color.values()) {
-            for (Piece piece : capturedPieces.get(color)) {
+        for (final Color color : Color.values()) {
+            for (final Piece piece : capturedPieces.get(color)) {
                 if (piece.isMoving()) {
                     piece.doMoveStep();
                 }
@@ -207,108 +154,40 @@ public class Position {
     }
 
     public void stopMoving() {
-        if (currentMove != null && currentMove.isPlace()) {
-            for (Piece piece : capturedPieces.get(currentMove.getOppositeColor())) {
-                if (piece.hasType(currentMove.getType())) {
-                    removePieceFromCaptured(currentMove.getOppositeColor(), piece);
-                    resetCapturePiecePositions(currentMove.getOppositeColor());
-                    addPiece(new Piece(currentMove.getColor(), currentMove.getType()), currentMove.toRow, currentMove.toColumn);
-                    return;
-                }
-            }
-            return;
-        }
         if (currentMove != null && !currentMove.isAmbiguous()) {
-            if (currentMove.isCheck()) {
-                checkCounter.put(currentMove.getColor(), checkCounter.get(currentMove.getColor()) + 1);
-            }
-            boolean targetSquareEmpty = pieceGrid[currentMove.toRow][currentMove.toColumn] == null;
-            if (!targetSquareEmpty && currentMove.isCapture() &&
-                    !pieceGrid[currentMove.toRow][currentMove.toColumn].hasType(Type.ICE_CUBE)) {
-                capturePiece(pieceGrid[currentMove.toRow][currentMove.toColumn]);
-            }
-            pieceGrid[currentMove.toRow][currentMove.toColumn] = pieceGrid[currentMove.fromRow][currentMove.fromColumn];
-            // handle promoting
-            if (currentMove.getPromoteType() != null) {
-                pieceGrid[currentMove.toRow][currentMove.toColumn].promoteTo(currentMove.getPromoteType());
-            }
-            // handle en passant capture
-            if (currentMove.isCapture() && currentMove.getType() == Type.PAWN && targetSquareEmpty) {
-                capturePiece(pieceGrid[currentMove.fromRow][currentMove.toColumn]);
-                pieceGrid[currentMove.fromRow][currentMove.toColumn] = null;
-            }
-            pieceGrid[currentMove.fromRow][currentMove.fromColumn] = null;
-            if (game.isVariant(Constants.ATOMIC) && currentMove.isCapture()) {
-                // handle exploded pieces
-                // TODO: maybe some simple animation?
-                for (int[] array : Type.KING.getMoveDirectionArray()) {
-                    int explodeRow = currentMove.toRow + array[0];
-                    int explodeColumn = currentMove.toColumn + array[1];
-                    if (isValidSquare(explodeRow, explodeColumn) &&
-                            pieceGrid[explodeRow][explodeColumn] != null &&
-                            !pieceGrid[explodeRow][explodeColumn].hasType(Type.PAWN)) {
-                        capturePiece(pieceGrid[explodeRow][explodeColumn]);
-                        pieceGrid[explodeRow][explodeColumn] = null;
-                    }
-                }
-                capturePiece(pieceGrid[currentMove.toRow][currentMove.toColumn]);
-                pieceGrid[currentMove.toRow][currentMove.toColumn] = null;
-            }
-            if (game.isVariant(Constants.CHESHIRE_CAT)) {
-                pieceGrid[currentMove.fromRow][currentMove.fromColumn] = new Piece(Type.HOLE);
-            }
-            if (game.isVariant(Constants.ICE_AGE) &&
-                    currentMove.getMoveNumber() % 20 == 0 &&
-                    currentMove.getColor() == Color.BLACK) {
-                // after every 20th move, perform the ice age
-                // add ice cubes to empty squares not orthogonally surrounded by pieces
-                for (int row = 0; row < game.getHeight(); row++) {
-                    for (int column = 0; column < game.getWidth(); column++) {
-                        if (pieceGrid[row][column] == null) {
-                            for (int[] array : Type.KING.getMoveDirectionArray()) {
-                                if (pieceGrid[row][column] == null &&
-                                        (array[0] == 0 || array[1] == 0)) {
-                                    int testRow = row + array[0];
-                                    int testColumn = column + array[1];
-                                    if (isValidSquare(testRow, testColumn) &&
-                                            !isPlayablePiece(pieceGrid[testRow][testColumn])) {
-                                        addPiece(new Piece(Type.ICE_CUBE), row, column);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                // freeze (capture and replace with ice cubes) pieces not connected to other pieces
-                for (int row = 0; row < game.getHeight(); row++) {
-                    for (int column = 0; column < game.getWidth(); column++) {
-                        if (pieceGrid[row][column] != null && !pieceGrid[row][column].hasType(Type.ICE_CUBE)) {
-                            boolean connectedPieceFound = false;
-                            for (int[] array : Type.KING.getMoveDirectionArray()) {
-                                int testRow = row + array[0];
-                                int testColumn = column + array[1];
-                                if (isValidSquare(testRow, testColumn) &&
-                                        isPlayablePiece(pieceGrid[testRow][testColumn])) {
-                                    connectedPieceFound = true;
-                                }
-                            }
-                            if (!connectedPieceFound) {
-                                capturePiece(pieceGrid[row][column]);
-                                addPiece(new Piece(Type.ICE_CUBE), row, column);
-                            }
-                        }
-                    }
-                }
-            }
-            currentMove.clearSquares();
+            handleStopMoving();
         }
-        if (game.isVariant(Constants.DARK)) {
-            // recalculate visible squares
-            resetVisibleGrid();
+        else if (currentMove != null && currentMove.isPlace()) {
+            handlePlacingMoveEnd();
         }
     }
 
-    public void setVisibleGrid(final boolean visible) {
+    @SuppressWarnings("PMD.NullAssignment")
+    private void handleStopMoving() {
+        if (currentMove.isCheck()) {
+            checkCounter.put(currentMove.getColor(), checkCounter.get(currentMove.getColor()) + 1);
+        }
+        final boolean targetSquareEmpty = pieceGrid[currentMove.toRow][currentMove.toColumn] == null;
+        if (!targetSquareEmpty && currentMove.isCapture() &&
+                !pieceGrid[currentMove.toRow][currentMove.toColumn].hasType(Type.ICE_CUBE)) {
+            capturePiece(pieceGrid[currentMove.toRow][currentMove.toColumn]);
+        }
+        pieceGrid[currentMove.toRow][currentMove.toColumn] = pieceGrid[currentMove.fromRow][currentMove.fromColumn];
+        // handle promoting
+        if (currentMove.getPromoteType() != null) {
+            pieceGrid[currentMove.toRow][currentMove.toColumn].promoteTo(currentMove.getPromoteType());
+        }
+        // handle en passant capture
+        if (currentMove.isCapture() && currentMove.isPawn() && targetSquareEmpty) {
+            capturePiece(pieceGrid[currentMove.fromRow][currentMove.toColumn]);
+            pieceGrid[currentMove.fromRow][currentMove.toColumn] = null;
+        }
+        pieceGrid[currentMove.fromRow][currentMove.fromColumn] = null;
+        handleVariants();
+        currentMove.clearSquares();
+    }
+
+    private void setVisibleGrid(final boolean visible) {
         for (int row = 0; row < game.getHeight(); row++) {
             for (int column = 0; column < game.getWidth(); column++) {
                 visibleGrid[row][column] = visible;
@@ -318,52 +197,20 @@ public class Position {
 
     public void resetVisibleGrid() {
         setVisibleGrid(false);
-        Color color = game.hasOppositeOrientation() ? Color.BLACK : Color.WHITE;
+        final Color color = game.hasOppositeOrientation() ? Color.BLACK : Color.WHITE;
         for (int row = 0; row < game.getHeight(); row++) {
             for (int column = 0; column < game.getWidth(); column++) {
-                Piece piece = pieceGrid[row][column];
+                final Piece piece = pieceGrid[row][column];
                 if (piece != null && piece.hasColor(color)) {
                     visibleGrid[row][column] = true;
-                    Type type = piece.getType();
-                    if (type == Type.PAWN) {
-                        int direction = color == Color.WHITE ? 1 : -1;
-                        int startRow = color == Color.WHITE ? 1 : 6;
-                        visibleGrid[row + direction][column] = true;
-                        if (row == startRow && !isPlayablePiece(pieceGrid[row + direction][column])) {
-                            visibleGrid[row + direction + direction][column] = true;
-                        }
-                        if (isValidSquare(row + direction, column - 1)) {
-                            visibleGrid[row + direction][column - 1] = true;
-                        }
-                        if (isValidSquare(row + direction, column + 1)) {
-                            visibleGrid[row + direction][column + 1] = true;
-                        }
-                    } else {
-                        int[][] moveDirectionArray = type.getMoveDirectionArray();
-                        int maxMoveDistance = type.getMaxMoveDistance();
-                        for (int[] array : moveDirectionArray) {
-                            boolean directionSearch = true;
-                            for (int distance = 1; distance <= maxMoveDistance && directionSearch; distance++) {
-                                int testRow = row + array[0] * distance;
-                                int testColumn = column + array[1] * distance;
-                                if (isValidSquare(testRow, testColumn)) {
-                                    visibleGrid[testRow][testColumn] = true;
-                                    if (isPlayablePiece(pieceGrid[testRow][testColumn])) {
-                                        directionSearch = false;
-                                    }
-                                } else {
-                                    directionSearch = false;
-                                }
-                            }
-                        }
-                    }
+                    calculatePieceReach(piece, row, column);
                 }
             }
         }
     }
 
     public void capturePiece(final Piece piece) {
-        Piece capturedPiece = Piece.from(piece);
+        final Piece capturedPiece = Piece.from(piece);
         if (game.isVariant(Constants.LOOP)) {
             capturedPiece.setOppositeColor();
         }
@@ -373,7 +220,7 @@ public class Position {
 
     public void resetCapturePiecePositions(final Color color) {
         int index = 0;
-        for (Piece piece : capturedPieces.get(color)) {
+        for (final Piece piece : capturedPieces.get(color)) {
             piece.setXY(game, color, index);
             index++;
         }
@@ -405,122 +252,38 @@ public class Position {
     }
 
     public String getGameStatus() {
-        if (game.isVariant(Constants.THREE_CHECKS)) {
-            return "Checks: " + checkCounter.get(Color.WHITE) + "/" + checkCounter.get(Color.BLACK);
-        }
-        return "";
+        return game.isVariant(Constants.THREE_CHECKS) ?
+        "Checks: " + checkCounter.get(Color.WHITE) + "/" + checkCounter.get(Color.BLACK) :
+        "";
     }
 
     public String getResult() {
-        if (game.isVariant(Constants.EXTINCTION)) {
-            Set<Type> whiteTypes = new HashSet<>();
-            Set<Type> blackTypes = new HashSet<>();
-            for (int i = 0; i < game.getHeight(); i++) {
-                for (int j = 0; j < game.getWidth(); j++) {
-                    if (pieceGrid[i][j] != null) {
-                        if (pieceGrid[i][j].hasColor(Color.WHITE)) {
-                            whiteTypes.add(pieceGrid[i][j].getType());
-                        } else if (pieceGrid[i][j].hasColor(Color.BLACK)) {
-                            blackTypes.add(pieceGrid[i][j].getType());
-                        }
-                    }
-                }
-            }
-            for (Type type : Type.values()) {
-                if (!whiteTypes.contains(type)) {
-                    return "White lost all " + type.name().toLowerCase() + "s";
-                }
-                if (!blackTypes.contains(type)) {
-                    return "Black lost all " + type.name().toLowerCase() + "s";
-                }
+        String variant = game.getVariant();
+        if (variant == null) {
+            variant = "";
+        }
+        String result = switch (variant) {
+            case Constants.EXTINCTION -> getExtinctionResult();
+            case Constants.THREE_CHECKS -> getThreeChecksResult();
+            case Constants.ANTI -> getAntiResult();
+            case Constants.ATOMIC -> getAtomicResult();
+            case Constants.DARK -> getDarkResult();
+            case Constants.RACING_KINGS -> getRacingKingsResult();
+            case Constants.MASSACRE -> getMassacreResult();
+            default -> "";
+        };
+        if (StringUtils.isBlank(result)) {
+            if (isCheckmate()) {
+                result = "Checkmate";
+            } else if (game.whiteWon()) {
+                result = "Black resigned";
+            } else if (game.blackWon()) {
+                result = "White resigned";
+            } else if (game.draw()) {
+                result = "Draw";
             }
         }
-        if (game.isVariant(Constants.THREE_CHECKS)) {
-            if (checkCounter.get(Color.WHITE) == 3 || checkCounter.get(Color.BLACK) == 3) {
-                return "Third check";
-            }
-        }
-        if (game.isVariant(Constants.ANTI)) {
-            int whiteCounter = 0;
-            int blackCounter = 0;
-            for (int i = 0; i < game.getHeight(); i++) {
-                for (int j = 0; j < game.getWidth(); j++) {
-                    if (pieceGrid[i][j] != null) {
-                        if (pieceGrid[i][j].isWhite()) {
-                            whiteCounter++;
-                        } else {
-                            blackCounter++;
-                        }
-                    }
-                }
-            }
-            if (whiteCounter == 0) {
-                return "White lost all pieces";
-            }
-            if (blackCounter == 0) {
-                return "Black lost all pieces";
-            }
-        }
-        if (game.isVariant(Constants.ATOMIC) || game.isVariant(Constants.DARK)) {
-            boolean whiteKingFound = false;
-            boolean blackKingFound = false;
-            for (int i = 0; i < game.getHeight(); i++) {
-                for (int j = 0; j < game.getWidth(); j++) {
-                    if (pieceGrid[i][j] != null && pieceGrid[i][j].hasType(Type.KING)) {
-                        if (pieceGrid[i][j].isWhite()) {
-                            whiteKingFound = true;
-                        } else {
-                            blackKingFound = true;
-                        }
-                    }
-                }
-            }
-            if (!whiteKingFound) {
-                return game.isVariant(Constants.ATOMIC) ? "White king exploded" : "White king captured";
-            }
-            if (!blackKingFound) {
-                return game.isVariant(Constants.ATOMIC) ? "Black king exploded" : "Black king captured";
-            }
-        }
-        if (game.isVariant(Constants.RACING_KINGS)) {
-            boolean whiteKingLastRow = false;
-            boolean blackKingLastRow = false;
-            int row = game.getHeight() - 1;
-            for (int column = 0; column < game.getWidth(); column++) {
-                if (pieceGrid[row][column] != null && pieceGrid[row][column].hasType(Type.KING)) {
-                    if (pieceGrid[row][column].isWhite()) {
-                        whiteKingLastRow = true;
-                    } else {
-                        blackKingLastRow = true;
-                    }
-                }
-            }
-            if (whiteKingLastRow && blackKingLastRow) {
-                return "Both kings reached the last row";
-            }
-            if (whiteKingLastRow) {
-                return "White king reached the last row";
-            }
-            if (blackKingLastRow) {
-                return "Black king reached the last row";
-            }
-        }
-        if (game.isVariant(Constants.MASSACRE)) {
-            return "No more moves";
-        }
-        if (isCheckmate()) {
-            return "Checkmate";
-        }
-        if (game.whiteWon()) {
-            return "Black resigned";
-        }
-        if (game.blackWon()) {
-            return "White resigned";
-        }
-        if (game.draw()) {
-            return "Draw";
-        }
-        return null;
+        return result;
     }
 
     public Notation getCurrentMoveNotationDto() {
@@ -532,29 +295,366 @@ public class Position {
         String result = "";
         if (currentMove != null) {
             pgnCode = currentMove.getPgnCode();
-            if (currentMove.getColor() == Color.WHITE) {
+            if (currentMove.isWhite()) {
                 moveNumber = currentMove.getMoveNumber();
             }
-            prefix = currentMove.getMoveNumber() + ". " + (currentMove.getColor() == Color.BLACK ? "... " : "");
+            prefix = currentMove.getMoveNumber() + ". " + (currentMove.isBlack() ? "... " : "");
             if (game.isVariant(Constants.DARK) &&
-                    (game.hasOppositeOrientation() && currentMove.getColor() == Color.WHITE ||
-                            !game.hasOppositeOrientation() && currentMove.getColor() == Color.BLACK)) {
+                    (game.hasOppositeOrientation() && currentMove.isWhite() ||
+                            !game.hasOppositeOrientation() && currentMove.isBlack())) {
                 suffix = "?";
             } else {
                 symbol = getSymbol(pgnCode.substring(0, 1), currentMove.getColor());
                 suffix = symbol.isBlank() ? pgnCode : pgnCode.substring(1);
             }
             if (isFinished()) {
-                String r = getResult();
-                LOG.info("Result: " + r);
-                result = " (" + r + ")";
+                final String resultString = getResult();
+                LOG.info("Result: " + resultString);
+                result = " (" + resultString + ")";
             }
         }
         return new Notation(pgnCode, moveNumber, prefix, symbol, suffix, result);
     }
 
+    private String getExtinctionResult() {
+        String result = "";
+        final Set<Type> whiteTypes = EnumSet.noneOf(Type.class);
+        final Set<Type> blackTypes = EnumSet.noneOf(Type.class);
+        for (int i = 0; i < game.getHeight(); i++) {
+            for (int j = 0; j < game.getWidth(); j++) {
+                if (pieceGrid[i][j] != null) {
+                    if (pieceGrid[i][j].hasColor(Color.WHITE)) {
+                        whiteTypes.add(pieceGrid[i][j].getType());
+                    } else if (pieceGrid[i][j].hasColor(Color.BLACK)) {
+                        blackTypes.add(pieceGrid[i][j].getType());
+                    }
+                }
+            }
+        }
+        for (final Type type : Type.values()) {
+            if (!whiteTypes.contains(type)) {
+                result = "White lost all " + type.name().toLowerCase(Locale.ENGLISH) + "s";
+            }
+            if (!blackTypes.contains(type)) {
+                result = "Black lost all " + type.name().toLowerCase(Locale.ENGLISH) + "s";
+            }
+        }
+        return result;
+    }
+
+    private String getThreeChecksResult() {
+        String result = "";
+        if (checkCounter.get(Color.WHITE) == 3 || checkCounter.get(Color.BLACK) == 3) {
+            result = "Third check";
+        }
+        return result;
+    }
+
+    private String getAntiResult() {
+        String result = "";
+        int whiteCounter = 0;
+        int blackCounter = 0;
+        for (int i = 0; i < game.getHeight(); i++) {
+            for (int j = 0; j < game.getWidth(); j++) {
+                if (pieceGrid[i][j] != null) {
+                    if (pieceGrid[i][j].isWhite()) {
+                        whiteCounter++;
+                    } else {
+                        blackCounter++;
+                    }
+                }
+            }
+        }
+        if (whiteCounter == 0) {
+            result = "White lost all pieces";
+        }
+        if (blackCounter == 0) {
+            result = "Black lost all pieces";
+        }
+        return result;
+    }
+
+    private String getAtomicResult() {
+        String result = "";
+        boolean whiteKingFound = false;
+        boolean blackKingFound = false;
+        for (int i = 0; i < game.getHeight(); i++) {
+            for (int j = 0; j < game.getWidth(); j++) {
+                if (pieceGrid[i][j] != null && pieceGrid[i][j].hasType(Type.KING)) {
+                    if (pieceGrid[i][j].isWhite()) {
+                        whiteKingFound = true;
+                    } else {
+                        blackKingFound = true;
+                    }
+                }
+            }
+        }
+        if (!whiteKingFound) {
+            result = "White king exploded";
+        }
+        if (!blackKingFound) {
+            result = "Black king exploded";
+        }
+        return result;
+    }
+
+    private String getDarkResult() {
+        String result = "";
+        boolean whiteKingFound = false;
+        boolean blackKingFound = false;
+        for (int i = 0; i < game.getHeight(); i++) {
+            for (int j = 0; j < game.getWidth(); j++) {
+                if (pieceGrid[i][j] != null && pieceGrid[i][j].hasType(Type.KING)) {
+                    if (pieceGrid[i][j].isWhite()) {
+                        whiteKingFound = true;
+                    } else {
+                        blackKingFound = true;
+                    }
+                }
+            }
+        }
+        if (!whiteKingFound) {
+            result = "White king captured";
+        }
+        if (!blackKingFound) {
+            result = "Black king captured";
+        }
+        return result;
+    }
+
+    private String getRacingKingsResult() {
+        String result = "";
+        boolean whiteKingLastRow = false;
+        boolean blackKingLastRow = false;
+        final int row = game.getHeight() - 1;
+        for (int column = 0; column < game.getWidth(); column++) {
+            if (pieceGrid[row][column] != null && pieceGrid[row][column].hasType(Type.KING)) {
+                if (pieceGrid[row][column].isWhite()) {
+                    whiteKingLastRow = true;
+                } else {
+                    blackKingLastRow = true;
+                }
+            }
+        }
+        if (whiteKingLastRow && blackKingLastRow) {
+            result = "Both kings reached the last row";
+        }
+        if (whiteKingLastRow) {
+            result = "White king reached the last row";
+        }
+        if (blackKingLastRow) {
+            result = "Black king reached the last row";
+        }
+        return result;
+    }
+
+    private String getMassacreResult() {
+        return "No more moves";
+    }
+
+    @SuppressWarnings("PMD.NullAssignment")
+    private void handleCastling(final Move move) {
+        // handle castling
+        if (move.isCastlingType(game.getVariant())) {
+            Transition rook = new Transition(move.fromRow, -1, move.toRow, -1);
+            if ((game.isVariant(Constants.FISCHER_RANDOM) || game.isVariant(Constants.CAPABLANCA_RANDOM)) &&
+                    (move.isCastlingShort() || move.isCastlingLong())) {
+                calculateKingPosition(move);
+            }
+            if (move.isCastlingLong()) {
+                rook = calculateLongCastling(rook, move);
+            } else if (move.isCastlingShort()) {
+                rook = calculateShortCastling(rook, move);
+            }
+            if (rook.fromColumn() >= 0) {
+                pieceGrid[rook.toRow()][rook.toColumn()] = pieceGrid[rook.fromRow()][rook.fromColumn()];
+                pieceGrid[rook.toRow()][rook.toColumn()].setTargetXYAndSteps(game, rook.toColumn(), rook.toRow());
+                pieceGrid[rook.fromRow()][rook.fromColumn()] = null;
+            }
+        }
+    }
+
+    private void calculateKingPosition(final Move move) {
+        // find the king column
+        for (int column = 0; column < game.getWidth() - 1; column++) {
+            if (pieceGrid[move.fromRow][column] != null &&
+                    pieceGrid[move.fromRow][column].hasType(Type.KING)) {
+                move.fromColumn = column;
+            }
+        }
+    }
+
+    private Transition calculateLongCastling(final Transition rook, final Move move) {
+        // O-O-O
+        int rookFromColumn = game.isVariant(Constants.EMBASSY) || game.isVariant(Constants.JANUS) ? game.getWidth() - 1 : 0;
+        if (game.isVariant(Constants.FISCHER_RANDOM) || game.isVariant(Constants.CAPABLANCA_RANDOM)) {
+            // find the rook column
+            for (int column = 0; column < move.fromColumn; column++) {
+                if (pieceGrid[move.fromRow][column] != null &&
+                        pieceGrid[move.fromRow][column].hasType(Type.ROOK)) {
+                    rookFromColumn = column;
+                }
+            }
+        }
+        int rookToColumn = game.isVariant(Constants.EMBASSY) ? 6 : 3;
+        if (game.isVariant(Constants.JANUS)) {
+            rookToColumn = 7;
+        }
+        return new Transition(rook.fromRow(), rookFromColumn, rook.toRow(), rookToColumn);
+    }
+
+    private Transition calculateShortCastling(final Transition rook, final Move move) {
+        // O-O
+        int rookFromColumn = game.isVariant(Constants.EMBASSY) || game.isVariant(Constants.JANUS) ? 0 : game.getWidth() - 1;
+        if (game.isVariant(Constants.FISCHER_RANDOM) || game.isVariant(Constants.CAPABLANCA_RANDOM)) {
+            // find the rook column
+            for (int column = move.fromColumn + 1; column < game.getWidth(); column++) {
+                if (pieceGrid[move.fromRow][column] != null &&
+                        pieceGrid[move.fromRow][column].hasType(Type.ROOK)) {
+                    rookFromColumn = column;
+                }
+            }
+        }
+        final int rookToColumn = game.isVariant(Constants.EMBASSY) || game.isVariant(Constants.JANUS) ? 2 : 5;
+        return new Transition(rook.fromRow(), rookFromColumn, rook.toRow(), rookToColumn);
+    }
+
+    private void handlePlacingMoveStart(final Move move) {
+        if (move.isPlace()) {
+            for (final Piece piece : capturedPieces.get(currentMove.getOppositeColor())) {
+                if (piece.hasType(currentMove.getType())) {
+                    piece.setTargetXYAndSteps(game, currentMove.toColumn, currentMove.toRow);
+                }
+            }
+        }
+    }
+
+    private void handlePlacingMoveEnd() {
+        for (final Piece piece : capturedPieces.get(currentMove.getOppositeColor())) {
+            if (piece.hasType(currentMove.getType())) {
+                removePieceFromCaptured(currentMove.getOppositeColor(), piece);
+                resetCapturePiecePositions(currentMove.getOppositeColor());
+                addPiece(new Piece(currentMove.getColor(), currentMove.getType()), currentMove.toRow, currentMove.toColumn);
+            }
+        }
+    }
+
+    private void handleVariants() {
+        if (game.isVariant(Constants.ATOMIC) && currentMove.isCapture()) {
+            handleAtomicExplosion();
+        }
+        if (game.isVariant(Constants.CHESHIRE_CAT)) {
+            pieceGrid[currentMove.fromRow][currentMove.fromColumn] = new Piece(Type.HOLE);
+        }
+        if (game.isVariant(Constants.ICE_AGE) &&
+                currentMove.getMoveNumber() % 20 == 0 &&
+                currentMove.isBlack()) {
+            handleIceAgeEvent();
+        }
+        if (game.isVariant(Constants.DARK)) {
+            // recalculate visible squares
+            resetVisibleGrid();
+        }
+   }
+
+   @SuppressWarnings("PMD.NullAssignment")
+    private void handleAtomicExplosion() {
+        // handle exploded pieces
+        // TODO: maybe some simple animation?
+        for (final int[] array : Type.KING.getMoveDirectionArray()) {
+            final int explodeRow = currentMove.toRow + array[0];
+            final int explodeColumn = currentMove.toColumn + array[1];
+            if (isValidSquare(explodeRow, explodeColumn) &&
+                    pieceGrid[explodeRow][explodeColumn] != null &&
+                    !pieceGrid[explodeRow][explodeColumn].hasType(Type.PAWN)) {
+                capturePiece(pieceGrid[explodeRow][explodeColumn]);
+                pieceGrid[explodeRow][explodeColumn] = null;
+            }
+        }
+        capturePiece(pieceGrid[currentMove.toRow][currentMove.toColumn]);
+        pieceGrid[currentMove.toRow][currentMove.toColumn] = null;
+    }
+
+    private void handleIceAgeEvent() {
+        // after every 20th move, perform the ice age
+        // add ice cubes to empty squares not orthogonally surrounded by pieces
+        for (int row = 0; row < game.getHeight(); row++) {
+            for (int column = 0; column < game.getWidth(); column++) {
+                if (pieceGrid[row][column] == null) {
+                    for (final int[] array : Type.KING.getMoveDirectionArray()) {
+                        if (pieceGrid[row][column] == null &&
+                                (array[0] == 0 || array[1] == 0)) {
+                            final int testRow = row + array[0];
+                            final int testColumn = column + array[1];
+                            if (isValidSquare(testRow, testColumn) &&
+                                    !isPlayablePiece(pieceGrid[testRow][testColumn])) {
+                                addPiece(new Piece(Type.ICE_CUBE), row, column);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // freeze (capture and replace with ice cubes) pieces not connected to other pieces
+        for (int row = 0; row < game.getHeight(); row++) {
+            for (int column = 0; column < game.getWidth(); column++) {
+                if (pieceGrid[row][column] != null && !pieceGrid[row][column].hasType(Type.ICE_CUBE)) {
+                    boolean connectedPieceFound = false;
+                    for (final int[] array : Type.KING.getMoveDirectionArray()) {
+                        final int testRow = row + array[0];
+                        final int testColumn = column + array[1];
+                        if (isValidSquare(testRow, testColumn) &&
+                                isPlayablePiece(pieceGrid[testRow][testColumn])) {
+                            connectedPieceFound = true;
+                        }
+                    }
+                    if (!connectedPieceFound) {
+                        capturePiece(pieceGrid[row][column]);
+                        addPiece(new Piece(Type.ICE_CUBE), row, column);
+                    }
+                }
+            }
+        }
+    }
+
+    private void calculatePieceReach(final Piece piece, final int row, final int column) {
+        final Color color = piece.getColor();
+        if (piece.isPawn()) {
+            final int direction = color == Color.WHITE ? 1 : -1;
+            final int startRow = color == Color.WHITE ? 1 : 6;
+            visibleGrid[row + direction][column] = true;
+            if (row == startRow && !isPlayablePiece(pieceGrid[row + direction][column])) {
+                visibleGrid[row + direction + direction][column] = true;
+            }
+            if (isValidSquare(row + direction, column - 1)) {
+                visibleGrid[row + direction][column - 1] = true;
+            }
+            if (isValidSquare(row + direction, column + 1)) {
+                visibleGrid[row + direction][column + 1] = true;
+            }
+        } else {
+            final int[][] moveDirectionArray = piece.getMoveDirectionArray();
+            final int maxMoveDistance = piece.getMaxMoveDistance();
+            for (final int[] array : moveDirectionArray) {
+                boolean directionSearch = true;
+                for (int distance = 1; distance <= maxMoveDistance && directionSearch; distance++) {
+                    final int testRow = row + array[0] * distance;
+                    final int testColumn = column + array[1] * distance;
+                    if (isValidSquare(testRow, testColumn)) {
+                        visibleGrid[testRow][testColumn] = true;
+                        if (isPlayablePiece(pieceGrid[testRow][testColumn])) {
+                            directionSearch = false;
+                        }
+                    } else {
+                        directionSearch = false;
+                    }
+                }
+            }
+        }
+    }
+
     private String getSymbol(final String symbolCode, final Color color) {
-        boolean isWhite = color == Color.WHITE;
+        final boolean isWhite = color == Color.WHITE;
         return switch (symbolCode) {
             case "N" -> isWhite ? "♘" : "♞";
             case "B" -> isWhite ? "♗" : "♝";
@@ -602,24 +702,24 @@ public class Position {
     }
 
     private void addSourceSquareForPiece(final Move move) {
-        Type type = move.isRelayed() ? Type.KNIGHT : move.getType();
-        Color color = move.getColor();
-        int[][] moveDirectionArray = type.getMoveDirectionArray();
+        final Type type = move.isRelayed() ? Type.KNIGHT : move.getType();
+        final Color color = move.getColor();
+        final int[][] moveDirectionArray = type.getMoveDirectionArray();
         int maxMoveDistance = type.getMaxMoveDistance();
         if (game.isVariant(Constants.CHESHIRE_CAT) && type == Type.KING && !kingMoved.get(color)) {
             // Cheshire Cat king can make the first move as a queen
             maxMoveDistance = Type.QUEEN.getMaxMoveDistance();
             kingMoved.put(color, true);
         }
-        for (int[] array : moveDirectionArray) {
+        for (final int[] array : moveDirectionArray) {
             if (type == Type.ARCHBISHOP || type == Type.CHANCELLOR || type == Type.JANUS) {
                 // knight-like moves always have a fixed distance
                 maxMoveDistance = Math.abs(array[0]) == 2 || Math.abs(array[1]) == 2 ? 1 : type.getMaxMoveDistance();
             }
             boolean directionSearch = true;
             for (int distance = 1; distance <= maxMoveDistance && directionSearch; distance++) {
-                int testRow = move.toRow + array[0] * distance;
-                int testColumn = move.toColumn + array[1] * distance;
+                final int testRow = move.toRow + array[0] * distance;
+                final int testColumn = move.toColumn + array[1] * distance;
                 if (isValidSquare(testRow, testColumn)) {
                     // check pre-filled fromRow or fromColumn
                     if ((move.fromRow == -1 || move.fromRow == testRow) &&
@@ -632,9 +732,9 @@ public class Position {
                             if (move.isRelayed()) {
                                 // find relayed knight
                                 pieceFound = false;
-                                for (int[] knightArray : Type.KNIGHT.getMoveDirectionArray()) {
-                                    int knightRow = testRow + knightArray[0];
-                                    int knightColumn = testColumn + knightArray[1];
+                                for (final int[] knightArray : Type.KNIGHT.getMoveDirectionArray()) {
+                                    final int knightRow = testRow + knightArray[0];
+                                    final int knightColumn = testColumn + knightArray[1];
                                     if (isValidSquare(knightRow, knightColumn) &&
                                             pieceGrid[knightRow][knightColumn] != null &&
                                             pieceGrid[knightRow][knightColumn].hasType(Type.KNIGHT) &&
