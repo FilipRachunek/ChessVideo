@@ -26,6 +26,7 @@ import com.brainking.tools.utils.Constants;
 import com.brainking.tools.utils.Fonts;
 
 @Service
+@SuppressWarnings("PMD.GodClass")
 public class RenderService {
 
     private final SvgService svgService;
@@ -49,24 +50,7 @@ public class RenderService {
         // render a border with column letters and row numbers
         renderBorder(graphics2d, game, boardX, boardY, squareSize);
         // render pieces
-        final Piece[][] pieceGrid = position.getPieceGrid();
-        final List<Piece> movingPieces = new ArrayList<>();  // there could be more than one, e.g. castling
-        for (int row = 0; row < game.getHeight(); row++) {
-            for (int column = 0; column < game.getWidth(); column++) {
-                final Piece piece = pieceGrid[row][column];
-                if (piece != null) {
-                    if (piece.isMoving()) {
-                        movingPieces.add(piece);
-                    } else {
-                        renderPiece(graphics2d, game, piece, yShift);
-                    }
-                }
-            }
-        }
-        // display moving pieces on top of others
-        for (final Piece movingPiece : movingPieces) {
-            renderPiece(graphics2d, game, movingPiece, yShift);
-        }
+        renderPieces(graphics2d, game, position, yShift);
         // mask invisible squares
         for (int i = 0; i < game.getWidth(); i++) {
             for (int j = 0; j < game.getHeight(); j++) {
@@ -170,19 +154,40 @@ public class RenderService {
         }
     }
 
+    private void renderPieces(final Graphics2D graphics2d, final Game game, final Position position, final int yShift) {
+        final Piece[][] pieceGrid = position.getPieceGrid();
+        final List<Piece> movingPieces = new ArrayList<>();  // there could be more than one, e.g. castling
+        for (int row = 0; row < game.getHeight(); row++) {
+            for (int column = 0; column < game.getWidth(); column++) {
+                final Piece piece = pieceGrid[row][column];
+                if (piece != null) {
+                    if (piece.isMoving()) {
+                        movingPieces.add(piece);
+                    } else {
+                        renderPiece(graphics2d, game, piece, yShift);
+                    }
+                }
+            }
+        }
+        // display moving pieces on top of others
+        for (final Piece movingPiece : movingPieces) {
+            renderPiece(graphics2d, game, movingPiece, yShift);
+        }
+    }
+
     private void renderPiece(final Graphics2D graphics2d, final Game game, final Piece piece, final int yShift) {
         renderPiece(graphics2d, game, piece, Constants.getSquareSize(game), yShift);
     }
 
     private void renderPiece(final Graphics2D graphics2d, final Game game, final Piece piece, final int size, final int yShift) {
-        if (piece.getType().isVisible()) {
+        if (piece.isVisible()) {
             int xPos = piece.getX();
             int yPos = piece.getY() + yShift;
             if (game.hasOppositeOrientation()) {
                 xPos = Constants.VIDEO_WIDTH - xPos - size;
                 yPos = Constants.VIDEO_HEIGHT - yPos - size;
             }
-            graphics2d.drawImage(game.getFromPieceMap(piece.getColor(), piece.getType().getCode()), xPos, yPos, size, size, null);
+            graphics2d.drawImage(game.getFromPieceMap(piece.getColor(), piece.getCode()), xPos, yPos, size, size, null);
         }
     }
 
@@ -212,6 +217,7 @@ public class RenderService {
         graphics2d.drawString(description, (Constants.VIDEO_WIDTH - fontMetrics.stringWidth(description)) / 2, fontMetrics.getHeight() * 2 + 30);
     }
 
+    @SuppressWarnings("PMD.LawOfDemeter")
     private void renderCurrentMoveNotation(final Graphics2D graphics2d, final Position position) {
         final Notation notation = position.getCurrentMoveNotationDto();
         if (StringUtils.isNotBlank(notation.pgnCode())) {
@@ -247,21 +253,27 @@ public class RenderService {
             final Font font = Fonts.LINE_FONT;
             graphics2d.setFont(font);
             graphics2d.setColor(Color.BLACK);
-            final FontMetrics fontMetrics = graphics2d.getFontMetrics(font);
-            int xPos = 15;
-            int yPos = Constants.VIDEO_HEIGHT - fontMetrics.getHeight() - fontMetrics.getHeight() - 10;
-            for (final Move move : processedMoves) {
-                String code = move.getPgnCode();
-                if (StringUtils.isNotBlank(code)) {
-                    if (move.isWhite()) {
-                        code = move.getMoveNumber() + "." + code;
-                    }
-                    graphics2d.drawString(code, xPos, yPos);
-                    xPos += fontMetrics.stringWidth(code) + 5;
-                    if (!move.isWhite() && (move.getMoveNumber() == 15 || move.getMoveNumber() == 29)) {
-                        xPos = 15;
-                        yPos += fontMetrics.getHeight();
-                    }
+            renderNotation(graphics2d, font, processedMoves);
+        }
+    }
+
+    private void renderNotation(final Graphics2D graphics2d, final Font font, final List<Move> processedMoves) {
+        final FontMetrics fontMetrics = graphics2d.getFontMetrics(font);
+        int xPos = 15;
+        int yPos = Constants.VIDEO_HEIGHT - fontMetrics.getHeight() - fontMetrics.getHeight() - 10;
+        for (final Move move : processedMoves) {
+            String code = move.getPgnCode();
+            if (StringUtils.isNotBlank(code)) {
+                if (move.isWhite()) {
+                    final StringBuilder builder = new StringBuilder();
+                    builder.append(move.getMoveNumber()).append('.').append(code);
+                    code = builder.toString();
+                }
+                graphics2d.drawString(code, xPos, yPos);
+                xPos += fontMetrics.stringWidth(code) + 5;
+                if (!move.isWhite() && (move.getMoveNumber() == 15 || move.getMoveNumber() == 29)) {
+                    xPos = 15;
+                    yPos += fontMetrics.getHeight();
                 }
             }
         }

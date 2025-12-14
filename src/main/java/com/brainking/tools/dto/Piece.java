@@ -112,6 +112,14 @@ public class Piece {
         return type;
     }
 
+    public String getCode() {
+        return type.getCode();
+    }
+
+    public boolean isVisible() {
+        return type.isVisible();
+    }
+
     public boolean isPawn() {
         return type == Type.PAWN;
     }
