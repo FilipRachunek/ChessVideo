@@ -16,9 +16,9 @@ public class PositionService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PositionService.class);
 
-    public Position generateStartPosition(Game game) {
-        Position position = new Position(game);
-        String fen = game.getFEN();
+    public Position generateStartPosition(final Game game) {
+        final Position position = new Position(game);
+        final String fen = game.getFEN();
         if (StringUtils.isNotBlank(fen)) {
             addPositionFromFEN(game, position, fen);
         } else if (game.isVariant(Constants.RACING_KINGS)) {
@@ -44,35 +44,35 @@ public class PositionService {
         return position;
     }
 
-    private void addPositionFromFEN(Game game, Position position, String fen) {
+    private void addPositionFromFEN(final Game game, final Position position, final String fen) {
         // Example: kqnbbrrn/pppppppp/ppp5/8/8/5PPP/PPPPPPPP/NRRBBNQK w KQkq - 0 1
         LOG.info("Generating the position from FEN: " + fen);
-        String[] rowArray = fen.split(" ")[0].split("/");
+        final String[] rowArray = fen.split(" ")[0].split("/");
         for (int row = 7; row >= 0; row--) {
             int column = 0;
-            String codes = rowArray[7 - row];
+            final String codes = rowArray[7 - row];
             for (int i = 0; i < codes.length(); i++) {
-                char code = codes.charAt(i);
+                final char code = codes.charAt(i);
                 String codeString = String.valueOf(code);
                 if (Character.isDigit(code)) {
                     column += Integer.parseInt(codeString);
                 } else if (Character.isUpperCase(code)) {
                     if (game.isVariant(Constants.EMBASSY)) {
-                        if (codeString.equals("M")) {
-                            codeString = "C";
-                        } else if (codeString.equals("C")) {
-                            codeString = "A";
-                        }
+                        codeString = switch (codeString) {
+                            case "M" -> "C";
+                            case "C" -> "A";
+                            default -> codeString;
+                        };
                     }
                     position.addPiece(new Piece(Color.WHITE, Type.findByCode(codeString)), row, column);
                     column++;
                 } else if (Character.isLowerCase(code)) {
                     if (game.isVariant(Constants.EMBASSY)) {
-                        if (codeString.equals("m")) {
-                            codeString = "c";
-                        } else if (codeString.equals("c")) {
-                            codeString = "a";
-                        }
+                        codeString = switch (codeString) {
+                            case "m" -> "c";
+                            case "c" -> "a";
+                            default -> codeString;
+                        };
                     }
                     position.addPiece(new Piece(Color.BLACK, Type.findByCode(codeString)), row, column);
                     column++;
@@ -81,7 +81,7 @@ public class PositionService {
         }
     }
 
-    private void addStandardChessPosition(Position position) {
+    private void addStandardChessPosition(final Position position) {
         position.addPiece(new Piece(Color.WHITE, Type.ROOK), 0, 0);
         position.addPiece(new Piece(Color.WHITE, Type.KNIGHT), 0, 1);
         position.addPiece(new Piece(Color.WHITE, Type.BISHOP), 0, 2);
@@ -106,7 +106,7 @@ public class PositionService {
         }
     }
 
-    private void addRacingKingsPosition(Position position) {
+    private void addRacingKingsPosition(final Position position) {
         position.addPiece(new Piece(Color.BLACK, Type.KING), 1, 0);
         position.addPiece(new Piece(Color.BLACK, Type.QUEEN), 0, 0);
         position.addPiece(new Piece(Color.BLACK, Type.ROOK), 1, 1);
@@ -125,7 +125,7 @@ public class PositionService {
         position.addPiece(new Piece(Color.WHITE, Type.QUEEN), 0, 7);
     }
 
-    private void addKnightmateChessPosition(Position position) {
+    private void addKnightmateChessPosition(final Position position) {
         position.addPiece(new Piece(Color.WHITE, Type.ROOK), 0, 0);
         position.addPiece(new Piece(Color.WHITE, Type.KING), 0, 1);
         position.addPiece(new Piece(Color.WHITE, Type.BISHOP), 0, 2);
@@ -150,7 +150,7 @@ public class PositionService {
         }
     }
 
-    private void addHordeChessPosition(Position position) {
+    private void addHordeChessPosition(final Position position) {
         position.addPiece(new Piece(Color.WHITE, Type.ROOK), 0, 0);
         position.addPiece(new Piece(Color.WHITE, Type.KNIGHT), 0, 1);
         position.addPiece(new Piece(Color.WHITE, Type.BISHOP), 0, 2);
@@ -177,7 +177,7 @@ public class PositionService {
         position.addPiece(new Piece(Color.BLACK, Type.PAWN), 3, 4);
     }
 
-    private void addIceAgeChessPosition(Position position) {
+    private void addIceAgeChessPosition(final Position position) {
         addStandardChessPosition(position);
         for (int row = 2; row < 6; row++) {
             for (int column = 0; column < 8; column++) {
@@ -186,7 +186,7 @@ public class PositionService {
         }
     }
 
-    private void addLosAlamosPosition(Position position) {
+    private void addLosAlamosPosition(final Position position) {
         position.addPiece(new Piece(Color.WHITE, Type.ROOK), 0, 0);
         position.addPiece(new Piece(Color.WHITE, Type.KNIGHT), 0, 1);
         position.addPiece(new Piece(Color.WHITE, Type.QUEEN), 0, 2);
@@ -207,7 +207,7 @@ public class PositionService {
         }
     }
 
-    private void addLeganPosition(Position position) {
+    private void addLeganPosition(final Position position) {
         position.addPiece(new Piece(Color.WHITE, Type.PAWN), 0, 3);
         position.addPiece(new Piece(Color.WHITE, Type.ROOK), 0, 4);
         position.addPiece(new Piece(Color.WHITE, Type.BISHOP), 0, 5);
@@ -242,7 +242,7 @@ public class PositionService {
         position.addPiece(new Piece(Color.BLACK, Type.PAWN), 7, 4);
     }
 
-    private void addGrandPosition(Position position) {
+    private void addGrandPosition(final Position position) {
         position.addPiece(new Piece(Color.WHITE, Type.ROOK), 0, 0);
         position.addPiece(new Piece(Color.WHITE, Type.KNIGHT), 1, 1);
         position.addPiece(new Piece(Color.WHITE, Type.BISHOP), 1, 2);

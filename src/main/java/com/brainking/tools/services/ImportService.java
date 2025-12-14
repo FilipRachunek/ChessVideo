@@ -22,19 +22,19 @@ public class ImportService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ImportService.class);
 
-    private static final Pattern metadataPattern = Pattern.compile("^\\[([^\\s]+)\\s+\"(.+)\"]$");
-    private static final Pattern moveListPattern = Pattern.compile("\\d+.\\s+[^\\s]+\\s+[^\\s]+");
-    private static final Pattern movePattern = Pattern.compile("(\\d+).\\s+([^\\s]+)\\s+([^\\s]+)");
+    private static final Pattern METADATA = Pattern.compile("^\\[([^\\s]+)\\s+\"(.+)\"]$");
+    private static final Pattern MOVE_LIST = Pattern.compile("\\d+.\\s+[^\\s]+\\s+[^\\s]+");
+    private static final Pattern MOVE = Pattern.compile("(\\d+).\\s+([^\\s]+)\\s+([^\\s]+)");
 
-    public Game importPgn(File file) throws IOException {
+    public Game importPgn(final File file) throws IOException {
         LOG.info("Loading PGN file: " + file.getAbsolutePath());
-        Game game = new Game(FilenameUtils.getBaseName(file.getName()));
-        List<String> lines = FileUtils.readLines(file, "UTF-8");
+        final Game game = new Game(FilenameUtils.getBaseName(file.getName()));
+        final List<String> lines = FileUtils.readLines(file, "UTF-8");
         game.setPgnCode(String.join("\n", lines));
-        StringBuilder moveBuilder = new StringBuilder();
+        final StringBuilder moveBuilder = new StringBuilder();
         boolean moveLinesFound = false;
-        for (String line : lines) {
-            Matcher matcher = metadataPattern.matcher(line);
+        for (final String line : lines) {
+            final Matcher matcher = METADATA.matcher(line);
             // find metadata
             if (matcher.matches()) {
                 game.addMetadata(matcher.group(1), matcher.group(2));
@@ -42,20 +42,20 @@ public class ImportService {
                 moveLinesFound = true;
             }
             if (moveLinesFound) {
-                moveBuilder.append(line).append(" ");
+                moveBuilder.append(line).append(' ');
             }
         }
         game.setOrientationFromResult();
         game.setDimensionFromVariant();
         // make a single string from all move lines and parse them
-        String allMoves = StringUtils.trim(moveBuilder.toString());
-        Matcher matcher = moveListPattern.matcher(allMoves);
+        final String allMoves = StringUtils.trim(moveBuilder.toString());
+        final Matcher matcher = MOVE_LIST.matcher(allMoves);
         while (matcher.find()) {
-            Matcher m = movePattern.matcher(matcher.group());
-            if (m.matches()) {
-                int moveNumber = Integer.parseInt(m.group(1));
-                game.addMove(new Move(game, moveNumber, m.group(2), Color.WHITE));
-                String blackMove = m.group(3);
+            final Matcher movMatcher = MOVE.matcher(matcher.group());
+            if (movMatcher.matches()) {
+                final int moveNumber = Integer.parseInt(movMatcher.group(1));
+                game.addMove(new Move(game, moveNumber, movMatcher.group(2), Color.WHITE));
+                final String blackMove = movMatcher.group(3);
                 // skip game result (do not skip castling or ambiguous moves)
                 if (!blackMove.contains("-") || blackMove.contains("O") || blackMove.startsWith("?")) {
                     game.addMove(new Move(game, moveNumber, blackMove, Color.BLACK));
