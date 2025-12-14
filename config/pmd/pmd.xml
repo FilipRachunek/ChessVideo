@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Spring Boot Rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0
+                             http://pmd.sourceforge.net/ruleset_2_0_0.xsd">
+
+  <description>Spring Boot rules</description>
+
+  <!-- Best practices -->
+  <rule ref="category/java/bestpractices.xml">
+    <exclude name="GuardLogStatement"/>
+    <exclude name="UnitTestContainsTooManyAsserts"/>
+  </rule>
+
+  <!-- Code style -->
+  <rule ref="category/java/codestyle.xml">
+    <exclude name="AtLeastOneConstructor"/>
+    <exclude name="CommentDefaultAccessModifier"/>
+    <exclude name="ShortClassName"/>
+  </rule>
+
+<rule ref="category/java/codestyle.xml/ShortClassName">
+    <properties>
+        <property name="minimum" value="4" />
+    </properties>
+</rule>
+
+  <!-- Error-prone -->
+  <rule ref="category/java/errorprone.xml">
+    <exclude name="MissingStaticMethodInNonInstantiatableClass"/>
+  </rule>
+
+  <!-- Design -->
+  <rule ref="category/java/design.xml">
+    <!-- Spring beans often exceed this -->
+    <exclude name="TooManyMethods"/>
+    <exclude name="TooManyFields"/>
+    <exclude name="UseUtilityClass"/>
+    <exclude name="NcssCount"/>
+    <exclude name="CognitiveComplexity"/>
+    <exclude name="CyclomaticComplexity"/>
+  </rule>
+
+<rule ref="category/java/design.xml/NcssCount">
+    <properties>
+        <property name="methodReportLevel" value="100" />
+        <property name="classReportLevel" value="1500" />
+        <property name="ncssOptions" value="" />
+    </properties>
+</rule>
+
+<rule ref="category/java/design.xml/CognitiveComplexity">
+    <properties>
+        <property name="reportLevel" value="100" />
+    </properties>
+</rule>
+
+  <!-- Performance -->
+  <rule ref="category/java/performance.xml"/>
+
+</ruleset>

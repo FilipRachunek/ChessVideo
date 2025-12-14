@@ -17,55 +17,51 @@ import org.slf4j.LoggerFactory;
 
 public class Game {
 
-    private static final Logger log = LoggerFactory.getLogger(Game.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Game.class);
     private static final DateTimeFormatter INPUT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
     private static final DateTimeFormatter OUTPUT = DateTimeFormatter.ofPattern("d. MMMM yyyy", Locale.ENGLISH);
+    private static final String RESULT = "Result";
 
     private final String name;
     private final Map<String, String> metadataMap = new HashMap<>();
     private final List<Move> moves = new ArrayList<>();
     private String pgnCode;
-    private int width, height;
+    private int width;
+    private int height;
     private Color orientation;
     private Map<String, BufferedImage> whitePieceMap;
     private Map<String, BufferedImage> blackPieceMap;
-    private Map<String, BufferedImage> neutralPieceMap;
 
-    public Game(String name) {
+    public Game(final String name) {
         this.name = name;
         width = 8;
         height = 8;
     }
 
-    public void addPieceMaps(Map<String, BufferedImage> whitePieceMap,
-                             Map<String, BufferedImage> blackPieceMap,
-                             Map<String, BufferedImage> neutralPieceMap) {
+    public void addPieceMaps(final Map<String, BufferedImage> whitePieceMap,
+                             final Map<String, BufferedImage> blackPieceMap) {
         this.whitePieceMap = whitePieceMap;
         this.blackPieceMap = blackPieceMap;
-        this.neutralPieceMap = neutralPieceMap;
     }
 
-    public BufferedImage getFromPieceMap(Color color, String key) {
-        if (color == Color.WHITE) {
-            return whitePieceMap.get(key);
-        }
-        if (color == Color.BLACK) {
-            return blackPieceMap.get(key);
-        }
-        return neutralPieceMap.get(key);
+    public BufferedImage getFromPieceMap(final Color color, final String key) {
+        return switch (color) {
+            case Color.WHITE -> whitePieceMap.get(key);
+            case Color.BLACK -> blackPieceMap.get(key);
+        };
     }
 
-    public void addMetadata(String key, String value) {
-        log.debug(key + ": " + value);
+    public void addMetadata(final String key, final String value) {
+        LOG.debug(key + ": " + value);
         metadataMap.put(key, value);
     }
 
-    public void addMove(Move move) {
+    public void addMove(final Move move) {
         moves.add(move);
     }
 
     public void setOrientationFromResult() {
-        orientation = "0-1".equals(metadataMap.get("Result")) ? Color.BLACK : Color.WHITE;
+        orientation = "0-1".equals(metadataMap.get(RESULT)) ? Color.BLACK : Color.WHITE;
     }
 
     public void setDimensionFromVariant() {
@@ -81,7 +77,7 @@ public class Game {
         }
     }
 
-    public void setPgnCode(String pgnCode) {
+    public void setPgnCode(final String pgnCode) {
         this.pgnCode = pgnCode;
     }
 
@@ -98,15 +94,15 @@ public class Game {
     }
 
     public boolean whiteWon() {
-        return "1-0".equals(metadataMap.get("Result"));
+        return "1-0".equals(metadataMap.get(RESULT));
     }
 
     public boolean blackWon() {
-        return "0-1".equals(metadataMap.get("Result"));
+        return "0-1".equals(metadataMap.get(RESULT));
     }
 
     public boolean draw() {
-        return "1/2-1/2".equals(metadataMap.get("Result"));
+        return "1/2-1/2".equals(metadataMap.get(RESULT));
     }
 
     public boolean hasOppositeOrientation() {
@@ -129,7 +125,7 @@ public class Game {
         return metadataMap.get("Variant");
     }
 
-    public boolean isVariant(String variant) {
+    public boolean isVariant(final String variant) {
         return variant.equalsIgnoreCase(getVariant());
     }
 
@@ -161,7 +157,7 @@ public class Game {
     }
 
     public String getResult() {
-        return metadataMap.get("Result");
+        return metadataMap.get(RESULT);
     }
 
 }

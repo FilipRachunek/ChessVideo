@@ -19,7 +19,7 @@ import java.util.Arrays;
 @Service
 public class EncoderService {
 
-    private static final Logger log = LoggerFactory.getLogger(EncoderService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EncoderService.class);
 
     public String convertToMP4(String targetFolder, String videoName) {
         try {
@@ -38,7 +38,7 @@ public class EncoderService {
             FileUtils.forceDelete(source);
             return targetFolder + "/" + videoName + ".mp4";
         } catch (Exception ex) {
-            log.error("Error converting the video to MP4.", ex);
+            LOG.error("Error converting the video to MP4.", ex);
             return null;
         }
     }
@@ -61,7 +61,7 @@ public class EncoderService {
             Encoder encoder = new Encoder();
             encoder.encode(Arrays.asList(new MultimediaObject(audio), new MultimediaObject(video)), target, attrs);
         } catch (Exception ex) {
-            log.error("Error adding audio to the video.", ex);
+            LOG.error("Error adding audio to the video.", ex);
         }
     }
 

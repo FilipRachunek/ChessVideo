@@ -11,23 +11,23 @@ import org.junit.jupiter.api.Test;
 
 import com.brainking.tools.dto.Game;
 
-public class ImportServiceTest {
+class ImportServiceTest {
 
     private ImportService importService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         importService = new ImportService();
     }
 
     @Test
-    public void shouldImportPgnFile() throws IOException {
-        File file = new File(getClass().getResource("/8672028.pgn").getFile());
-        assertTrue(file.exists());
-        Game game = importService.importPgn(file);
-        assertEquals("1-0", game.getResult());
-        assertEquals("8672028", game.getName());
-        assertEquals(37, game.getMoves().size());
+    void shouldImportPgnFile() throws IOException {
+        final File file = new File(getClass().getResource("/8672028.pgn").getFile());
+        assertTrue(file.exists(), "PGN file must exist.");
+        final Game game = importService.importPgn(file);
+        assertEquals("1-0", game.getResult(), "Result should be 1-0.");
+        assertEquals("8672028", game.getName(), "Game ID and PGN file name are identical.");
+        assertEquals(37, game.getMoves().size(), "Imported game contains exactly 37 moves.");
     }
 
 }

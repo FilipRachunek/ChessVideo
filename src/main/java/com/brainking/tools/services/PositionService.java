@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class PositionService {
 
-    private static final Logger log = LoggerFactory.getLogger(PositionService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PositionService.class);
 
     public Position generateStartPosition(Game game) {
         Position position = new Position(game);
@@ -46,7 +46,7 @@ public class PositionService {
 
     private void addPositionFromFEN(Game game, Position position, String fen) {
         // Example: kqnbbrrn/pppppppp/ppp5/8/8/5PPP/PPPPPPPP/NRRBBNQK w KQkq - 0 1
-        log.info("Generating the position from FEN: " + fen);
+        LOG.info("Generating the position from FEN: " + fen);
         String[] rowArray = fen.split(" ")[0].split("/");
         for (int row = 7; row >= 0; row--) {
             int column = 0;

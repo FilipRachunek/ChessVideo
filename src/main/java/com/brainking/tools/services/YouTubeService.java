@@ -37,7 +37,7 @@ import java.util.Collections;
 @Service
 public class YouTubeService {
 
-    private static final Logger log = LoggerFactory.getLogger(YouTubeService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(YouTubeService.class);
 
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final String APPLICATION_NAME = "Chess Videos";
@@ -60,9 +60,9 @@ public class YouTubeService {
             YouTube.Channels.List request = youTube.channels()
                     .list("snippet,contentDetails,statistics");
             ChannelListResponse response = request.setId(channelId).execute();
-            log.info(response.toString());
+            LOG.info(response.toString());
         } catch (Exception ex) {
-            log.error("Error listing the YouTube channel.", ex);
+            LOG.error("Error listing the YouTube channel.", ex);
         }
     }
 
@@ -88,7 +88,7 @@ public class YouTubeService {
             Video response = request.execute();
             return response.getId();
         } catch (Exception ex) {
-            log.error("Error uploading the video to YouTube.", ex);
+            LOG.error("Error uploading the video to YouTube.", ex);
             return null;
         }
     }

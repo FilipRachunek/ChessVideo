@@ -2,6 +2,8 @@ plugins {
 	id "java"
 	id "org.springframework.boot" version "4.0.0"
 	id "io.spring.dependency-management" version "1.1.7"
+    id "com.github.spotbugs" version "6.0.18"
+    id "pmd"
 }
 
 java {
@@ -15,6 +17,31 @@ version "1.1"
 
 repositories {
     mavenCentral()
+}
+
+spotbugs {
+    toolVersion = "4.9.8"
+    effort = "max"
+    reportLevel = "low"
+    excludeFilter = file("config/spotbugs/exclude.xml")
+}
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+    reports {
+        html.required = true
+        xml.required = false
+    }
+}
+
+pmd {
+    toolVersion = "7.19.0"
+    ruleSetFiles = files("config/pmd/pmd.xml")
+    ruleSets = []
+    consoleOutput = true
+}
+
+tasks.withType(Pmd).configureEach {
+    ignoreFailures = false
 }
 
 dependencies {

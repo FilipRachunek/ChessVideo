@@ -14,19 +14,20 @@ import org.slf4j.LoggerFactory;
 
 public class Position {
 
-    private static final Logger log = LoggerFactory.getLogger(Position.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Position.class);
 
     private final Game game;
     private final Piece[][] pieceGrid;
     private final boolean[][] visibleGrid;
     private Move currentMove;
-    private int targetRow, targetColumn;
+    private int targetRow;
+    private int targetColumn;
     private final Map<Color, List<Piece>> capturedPieces = new HashMap<>();
     private final Map<Color, Integer> checkCounter = new HashMap<>();
     private final Map<Color, Boolean> kingMoved = new HashMap<>();
     private boolean finished;
 
-    public Position(Game game) {
+    public Position(final Game game) {
         this.game = game;
         pieceGrid = new Piece[game.getHeight()][game.getWidth()];
         visibleGrid = new boolean[game.getHeight()][game.getWidth()];
@@ -41,7 +42,7 @@ public class Position {
         targetColumn = -1;
     }
 
-    public boolean isVisible(int row, int column) {
+    public boolean isVisible(final int row, final int column) {
         return visibleGrid[row][column];
     }
 
@@ -49,12 +50,12 @@ public class Position {
         return pieceGrid;
     }
 
-    public void addPiece(Piece piece, int row, int column) {
+    public void addPiece(final Piece piece, final int row, final int column) {
         pieceGrid[row][column] = piece;
         piece.setXY(game, column, row);
     }
 
-    public void markTargetSquare(Move move) {
+    public void markTargetSquare(final Move move) {
         targetRow = move.toRow;
         targetColumn = move.toColumn;
     }
@@ -67,13 +68,13 @@ public class Position {
         return game.getHeight();
     }
 
-    public boolean matchesTargetSquare(int row, int column) {
+    public boolean matchesTargetSquare(final int row, final int column) {
         return row == targetRow && column == targetColumn;
     }
 
-    public void startMoving(Move move) {
+    public void startMoving(final Move move) {
         if (move.isAmbiguous() || move.isPlace()) {
-            log.info(move.toString());
+            LOG.info(move.toString());
             currentMove = Move.from(move);
             if (move.isPlace()) {
                 for (Piece piece : capturedPieces.get(currentMove.getOppositeColor())) {
@@ -91,7 +92,7 @@ public class Position {
         if (!move.isEmpty()) {
             // calculate rows and columns from the PGN code
             addSourceSquareToMove(move);
-            log.info(move.toString());
+            LOG.info(move.toString());
             currentMove = Move.from(move);
             // calculate frame steps
             pieceGrid[move.fromRow][move.fromColumn].setTargetXYAndSteps(game, move.toColumn, move.toRow);
@@ -151,13 +152,13 @@ public class Position {
         }
     }
 
-    public boolean matchesCurrentMove(int row, int column) {
+    public boolean matchesCurrentMove(final int row, final int column) {
         return currentMove != null &&
                 (currentMove.fromRow == row && currentMove.fromColumn == column ||
                         currentMove.toRow == row && currentMove.toColumn == column);
     }
 
-    public boolean matchesPieceInCheck(int row, int column) {
+    public boolean matchesPieceInCheck(final int row, final int column) {
         Type type = game.isVariant(Constants.KNIGHTMATE) ? Type.KNIGHT : Type.KING;
         return currentMove != null &&
                 currentMove.isCheck() &&
@@ -166,7 +167,7 @@ public class Position {
                 pieceGrid[row][column].hasColor(currentMove.getColor() == Color.WHITE ? Color.BLACK : Color.WHITE);
     }
 
-    public boolean matchesHole(int row, int column) {
+    public boolean matchesHole(final int row, final int column) {
         return pieceGrid[row][column] != null && pieceGrid[row][column].getType() == Type.HOLE;
     }
 
@@ -307,7 +308,7 @@ public class Position {
         }
     }
 
-    public void setVisibleGrid(boolean visible) {
+    public void setVisibleGrid(final boolean visible) {
         for (int row = 0; row < game.getHeight(); row++) {
             for (int column = 0; column < game.getWidth(); column++) {
                 visibleGrid[row][column] = visible;
@@ -361,7 +362,7 @@ public class Position {
         }
     }
 
-    public void capturePiece(Piece piece) {
+    public void capturePiece(final Piece piece) {
         Piece capturedPiece = Piece.from(piece);
         if (game.isVariant(Constants.LOOP)) {
             capturedPiece.setOppositeColor();
@@ -370,7 +371,7 @@ public class Position {
         resetCapturePiecePositions(piece.getColor());
     }
 
-    public void resetCapturePiecePositions(Color color) {
+    public void resetCapturePiecePositions(final Color color) {
         int index = 0;
         for (Piece piece : capturedPieces.get(color)) {
             piece.setXY(game, color, index);
@@ -378,7 +379,7 @@ public class Position {
         }
     }
 
-    public void removePieceFromCaptured(Color color, Piece piece) {
+    public void removePieceFromCaptured(final Color color, final Piece piece) {
         capturedPieces.get(color).remove(piece);
     }
 
@@ -545,14 +546,14 @@ public class Position {
             }
             if (isFinished()) {
                 String r = getResult();
-                log.info("Result: " + r);
+                LOG.info("Result: " + r);
                 result = " (" + r + ")";
             }
         }
         return new Notation(pgnCode, moveNumber, prefix, symbol, suffix, result);
     }
 
-    private String getSymbol(String symbolCode, Color color) {
+    private String getSymbol(final String symbolCode, final Color color) {
         boolean isWhite = color == Color.WHITE;
         return switch (symbolCode) {
             case "N" -> isWhite ? "♘" : "♞";
@@ -564,15 +565,15 @@ public class Position {
         };
     }
 
-    private boolean isValidSquare(int row, int column) {
+    private boolean isValidSquare(final int row, final int column) {
         return row >= 0 && row < game.getHeight() && column >= 0 && column < game.getWidth();
     }
 
-    private boolean isPlayablePiece(Piece piece) {
+    private boolean isPlayablePiece(final Piece piece) {
         return piece != null && piece.isPlayable();
     }
 
-    private void addSourceSquareToMove(Move move) {
+    private void addSourceSquareToMove(final Move move) {
         if (move.getType() == Type.PAWN && game.isVariant(Constants.LEGAN)) {
             if (move.isCapture()) {
                 if (move.fromColumn == move.toColumn) {
@@ -600,7 +601,7 @@ public class Position {
         }
     }
 
-    private void addSourceSquareForPiece(Move move) {
+    private void addSourceSquareForPiece(final Move move) {
         Type type = move.isRelayed() ? Type.KNIGHT : move.getType();
         Color color = move.getColor();
         int[][] moveDirectionArray = type.getMoveDirectionArray();

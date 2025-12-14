@@ -20,14 +20,14 @@ import java.util.regex.Pattern;
 @Service
 public class ImportService {
 
-    private static final Logger log = LoggerFactory.getLogger(ImportService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ImportService.class);
 
     private static final Pattern metadataPattern = Pattern.compile("^\\[([^\\s]+)\\s+\"(.+)\"]$");
     private static final Pattern moveListPattern = Pattern.compile("\\d+.\\s+[^\\s]+\\s+[^\\s]+");
     private static final Pattern movePattern = Pattern.compile("(\\d+).\\s+([^\\s]+)\\s+([^\\s]+)");
 
     public Game importPgn(File file) throws IOException {
-        log.info("Loading PGN file: " + file.getAbsolutePath());
+        LOG.info("Loading PGN file: " + file.getAbsolutePath());
         Game game = new Game(FilenameUtils.getBaseName(file.getName()));
         List<String> lines = FileUtils.readLines(file, "UTF-8");
         game.setPgnCode(String.join("\n", lines));

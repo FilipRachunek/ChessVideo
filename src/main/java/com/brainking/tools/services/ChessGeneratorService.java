@@ -47,7 +47,7 @@ import java.util.Map;
 @Service
 public class ChessGeneratorService {
 
-    private static final Logger log = LoggerFactory.getLogger(ChessGeneratorService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ChessGeneratorService.class);
 
     private final PositionService positionService;
     private final ImportService importService;
@@ -86,7 +86,7 @@ public class ChessGeneratorService {
         File archive = new File(processedFolder);
         Collection<File> files = FileUtils.listFiles(input, extensions, false);
         if (CollectionUtils.isEmpty(files)) {
-            log.info("No PGN files found.");
+            LOG.info("No PGN files found.");
             return;
         }
         createFolders(input, archive);
@@ -94,11 +94,11 @@ public class ChessGeneratorService {
         for (File pgnFile : files) {
             Collection<File> existingFiles = FileUtils.listFiles(archive, FileFilterUtils.nameFileFilter(pgnFile.getName()), null);
             if (!existingFiles.isEmpty()) {
-                log.info("File " + pgnFile.getName() + " already processed, deleting.");
+                LOG.info("File " + pgnFile.getName() + " already processed, deleting.");
                 try {
                     FileUtils.forceDelete(pgnFile);
                 } catch (Exception ex) {
-                    log.error("Error deleting the file.", ex);
+                    LOG.error("Error deleting the file.", ex);
                 }
                 continue;
             }
@@ -110,12 +110,11 @@ public class ChessGeneratorService {
                 int squareSize = Constants.getSquareSize(game);
                 Map<String, BufferedImage> whitePieceMap = getBufferedImageMap(getImageResourceMap("White"), squareSize);
                 Map<String, BufferedImage> blackPieceMap = getBufferedImageMap(getImageResourceMap("Black"), squareSize);
-                Map<String, BufferedImage> neutralPieceMap = getBufferedImageMap(getNeutralResourceMap(), squareSize);
-                game.addPieceMaps(whitePieceMap, blackPieceMap, neutralPieceMap);
+                game.addPieceMaps(whitePieceMap, blackPieceMap);
                 moves.addAll(game.getMoves());
                 Position position = positionService.generateStartPosition(game);
                 String videoFolder = targetFolder + (StringUtils.isNotBlank(game.getVariant()) ? "/" + game.getVariant() : "");
-                log.info("Rendering the video to " + videoFolder);
+                LOG.info("Rendering the video to " + videoFolder);
                 FileUtils.forceMkdir(new File(videoFolder));
                 String videoName = game.getName();
                 if (generateVideo) {
@@ -159,7 +158,7 @@ public class ChessGeneratorService {
                         BufferedImage image = getScreenshot(game, position);
                         String screenshotName = videoName + "-" + move.getScreenshotId() + ".png";
                         ImageIO.write(image, "png", new File(videoFolder, screenshotName));
-                        log.info("Screenshot " + screenshotName + " saved to " + videoFolder);
+                        LOG.info("Screenshot " + screenshotName + " saved to " + videoFolder);
                     }
                     // add ten times the last frame to set a delay between moves
                     if (encoder != null) {
@@ -172,30 +171,30 @@ public class ChessGeneratorService {
                 position.finishGame();
                 // display result and keep it for 10 seconds
                 if (encoder != null) {
-                    log.info("Rendering the final screen");
+                    LOG.info("Rendering the final screen");
                     BufferedImage image = getRenderedImage(game, position, processedMoves);
                     for (int i = 0; i < Constants.FRAMES_AFTER_LAST_MOVE; i++) {
                         encoder.encodeImage(image);
                     }
                     encoder.finish();
-                    log.info("Converting to MP4");
+                    LOG.info("Converting to MP4");
                     String pathToVideo = encoderService.convertToMP4(videoFolder, videoName);
-                    log.info("Video " + pathToVideo + " completed in " +
+                    LOG.info("Video " + pathToVideo + " completed in " +
                             (new SimpleDateFormat("mm:ss")).format(new Date(System.currentTimeMillis() - currentTime)) +
                             " minutes");
-                    log.info("Archiving file " + pgnFile + " to " + processedFolder);
+                    LOG.info("Archiving file " + pgnFile + " to " + processedFolder);
                     FileUtils.moveFileToDirectory(pgnFile, archive, true);
                     if (youTubeExportActive) {
                         // TODO: https://explorer.lichess.ovh/master?fen=<fenCode>
-                        log.info("Uploading video " + pathToVideo + " to YouTube");
+                        LOG.info("Uploading video " + pathToVideo + " to YouTube");
                         String youTubeId = youTubeService.uploadVideo(game, pathToVideo);
-                        log.info("Video " + pathToVideo + " uploaded with ID = " + youTubeId);
-                        log.info("SQL command (bk20 database): insert into game_external (game_id, you_tube_id) values (" +
+                        LOG.info("Video " + pathToVideo + " uploaded with ID = " + youTubeId);
+                        LOG.info("SQL command (bk20 database): insert into game_external (game_id, you_tube_id) values (" +
                                 game.getName() + ", '" + youTubeId + "');");
                     }
                 }
             } catch (Exception ex) {
-                log.error("Error rendering the video.", ex);
+                LOG.error("Error rendering the video.", ex);
             }
         }
     }
@@ -205,7 +204,7 @@ public class ChessGeneratorService {
             FileUtils.forceMkdir(input);
             FileUtils.forceMkdir(archive);
         } catch (IOException ex) {
-            log.error("Error creating folders.", ex);
+            LOG.error("Error creating folders.", ex);
         }
     }
 
@@ -463,7 +462,7 @@ public class ChessGeneratorService {
             t.setTranscodingHints(transcodingHints);
             t.transcode(input, null);
         } catch (Exception ex) {
-            log.error("Error converting the image from SVG.", ex);
+            LOG.error("Error converting the image from SVG.", ex);
         }
         return bufferedImage[0];
     }
@@ -488,7 +487,7 @@ public class ChessGeneratorService {
     private Map<String, BufferedImage> getBufferedImageMap(Map<String, String> imageResourceMap, int squareSize) {
         Map<String, BufferedImage> map = new HashMap<>();
         for (String key : imageResourceMap.keySet()) {
-            log.info("Loading " + imageResourceMap.get(key));
+            LOG.info("Loading " + imageResourceMap.get(key));
             map.put(key, getImageFromSvg(getClass().getResourceAsStream(imageResourceMap.get(key)), squareSize));
         }
         return map;
@@ -505,12 +504,6 @@ public class ChessGeneratorService {
         map.put("A", "/images/chess/" + prefix + "Archbishop.svg");
         map.put("C", "/images/chess/" + prefix + "Chancellor.svg");
         map.put("J", "/images/chess/" + prefix + "Archbishop.svg");
-        return map;
-    }
-
-    private Map<String, String> getNeutralResourceMap() {
-        Map<String, String> map = new HashMap<>();
-        map.put("i", "/images/neutral/IceCube.svg");
         return map;
     }
 

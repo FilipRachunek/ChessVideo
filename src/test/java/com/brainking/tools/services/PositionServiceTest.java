@@ -12,44 +12,44 @@ import com.brainking.tools.dto.Piece;
 import com.brainking.tools.dto.Position;
 import com.brainking.tools.dto.Type;
 
-public class PositionServiceTest {
+class PositionServiceTest {
 
     private PositionService positionService;
     
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         positionService = new PositionService();
     }
 
     @Test
-    public void shouldGenerateStartPositionForChess() {
-        Game game = new Game("name");
-        Position position = positionService.generateStartPosition(game);
-        assertNotNull(position);
-        assertEquals(8, position.getPieceGrid().length);
-        assertEquals(8, position.getPieceGrid()[0].length);
-        assertEquals(Type.ROOK, position.getPieceGrid()[0][0].getType());
-        assertEquals(Color.WHITE, position.getPieceGrid()[0][0].getColor());
-        assertEquals(Type.KNIGHT, position.getPieceGrid()[7][1].getType());
-        assertEquals(Color.BLACK, position.getPieceGrid()[7][1].getColor());
+    void shouldGenerateStartPositionForChess() {
+        final Game game = new Game("name");
+        final Position position = positionService.generateStartPosition(game);
+        assertNotNull(position, "The position must be non-null.");
+        assertEquals(8, position.getPieceGrid().length, "The board has 8 rows.");
+        assertEquals(8, position.getPieceGrid()[0].length, "The board has 8 columns.");
+        assertEquals(Type.ROOK, position.getPieceGrid()[0][0].getType(), "A rook is on this position.");
+        assertEquals(Color.WHITE, position.getPieceGrid()[0][0].getColor(), "And it's white.");
+        assertEquals(Type.KNIGHT, position.getPieceGrid()[7][1].getType(), "A knight is on this position.");
+        assertEquals(Color.BLACK, position.getPieceGrid()[7][1].getColor(), "And it's black.");
         for (int i = 0; i < 8; i++) {
-            assertEquals(Type.PAWN, position.getPieceGrid()[1][i].getType());
-            assertEquals(Color.WHITE, position.getPieceGrid()[1][i].getColor());
+            assertEquals(Type.PAWN, position.getPieceGrid()[1][i].getType(), "A pawn in on this position.");
+            assertEquals(Color.WHITE, position.getPieceGrid()[1][i].getColor(), "And it's white.");
         }
         for (int i = 0; i < 8; i++) {
-            assertEquals(Type.PAWN, position.getPieceGrid()[6][i].getType());
-            assertEquals(Color.BLACK, position.getPieceGrid()[6][i].getColor());
+            assertEquals(Type.PAWN, position.getPieceGrid()[6][i].getType(), "A pawn is on this position.");
+            assertEquals(Color.BLACK, position.getPieceGrid()[6][i].getColor(), "And it's black.");
         }
     }
 
     @Test
-    public void shouldPlacePiece() {
-        Game game = new Game("name");
-        Position position = positionService.generateStartPosition(game);
-        Piece piece = new Piece(Color.WHITE, Type.PAWN);
+    void shouldPlacePiece() {
+        final Game game = new Game("name");
+        final Position position = positionService.generateStartPosition(game);
+        final Piece piece = new Piece(Color.WHITE, Type.PAWN);
         position.addPiece(piece, 2, 2);
-        assertEquals(340, piece.getX());
-        assertEquals(640, piece.getY());
+        assertEquals(340, piece.getX(), "The piece's X-coordinate is 340.");
+        assertEquals(640, piece.getY(), "The piece's Y-coordinate is 640.");
     }
 
 }

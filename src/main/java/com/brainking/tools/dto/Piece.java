@@ -8,70 +8,72 @@ public class Piece {
 
     private Color color;
     private Type type;
-    private int x, y;
-    private int[] movingX, movingY;
+    private int pieceX;
+    private int pieceY;
+    private int[] movingX;
+    private int[] movingY;
     private int moveStepIndex;
     private boolean visible;
 
-    public static Piece from(Piece from) {
+    public static Piece from(final Piece from) {
         return new Piece(from.color, from.type);
     }
 
-    public Piece(Type type) {
+    public Piece(final Type type) {
         // for neutral pieces (holes, ice cubes)
         this.type = type;
     }
 
-    public Piece(Color color, Type type) {
+    public Piece(final Color color, final Type type) {
         this.color = color;
         this.type = type;
     }
 
-    public void setXY(Game game, int column, int row) {
-        x = Constants.getBoardX(game) + column * Constants.getSquareSize(game);
-        y = Constants.getBoardY(game) + (game.getHeight() - 1 - row) * Constants.getSquareSize(game);
+    public void setXY(final Game game, final int column, final int row) {
+        pieceX = Constants.getBoardX(game) + column * Constants.getSquareSize(game);
+        pieceY = Constants.getBoardY(game) + (game.getHeight() - 1 - row) * Constants.getSquareSize(game);
     }
 
-    public void setXY(Game game, Color color, int index) {
-        int boardX = Constants.getBoardX(game);
-        int boardY = Constants.getBoardY(game);
-        int squareSize = Constants.getSquareSize(game);
-        int capturedPieceSize = Constants.getCapturedPieceSize(game);
+    public void setXY(final Game game, final Color color, final int index) {
+        final int boardX = Constants.getBoardX(game);
+        final int boardY = Constants.getBoardY(game);
+        final int squareSize = Constants.getSquareSize(game);
+        final int capturedPieceSize = Constants.getCapturedPieceSize(game);
         int step = capturedPieceSize;
-        x = boardX - squareSize;
-        y = boardY;
+        pieceX = boardX - squareSize;
+        pieceY = boardY;
         if (color == Color.BLACK) {
-            x = boardX + (game.getWidth() + 1) * squareSize - capturedPieceSize;
-            y = boardY + game.getHeight() * squareSize - capturedPieceSize;
+            pieceX = boardX + (game.getWidth() + 1) * squareSize - capturedPieceSize;
+            pieceY = boardY + game.getHeight() * squareSize - capturedPieceSize;
             step = -step;
         }
-        y += step * index;
+        pieceY += step * index;
     }
 
-    public void setTargetXYAndSteps(Game game, int toColumn, int toRow) {
-        int squareSize = Constants.getSquareSize(game);
-        int targetX = Constants.getBoardX(game) + toColumn * squareSize;
-        int targetY = Constants.getBoardY(game) + (game.getHeight() - 1 - toRow) * squareSize;
+    public void setTargetXYAndSteps(final Game game, final int toColumn, final int toRow) {
+        final int squareSize = Constants.getSquareSize(game);
+        final int targetX = Constants.getBoardX(game) + toColumn * squareSize;
+        final int targetY = Constants.getBoardY(game) + (game.getHeight() - 1 - toRow) * squareSize;
         movingX = new int[Constants.MOVE_STEPS];
         movingY = new int[Constants.MOVE_STEPS];
         for (int i = 0; i < Constants.MOVE_STEPS; i++) {
-            movingX[i] = x + i * (targetX - x) / Constants.MOVE_STEPS;
-            movingY[i] = y + i * (targetY - y) / Constants.MOVE_STEPS;
+            movingX[i] = pieceX + i * (targetX - pieceX) / Constants.MOVE_STEPS;
+            movingY[i] = pieceY + i * (targetY - pieceY) / Constants.MOVE_STEPS;
         }
         movingX[Constants.MOVE_STEPS - 1] = targetX;
         movingY[Constants.MOVE_STEPS - 1] = targetY;
     }
 
-    public void promoteTo(Type newType) {
+    public void promoteTo(final Type newType) {
         type = newType;
     }
 
     public int getX() {
-        return x;
+        return pieceX;
     }
 
     public int getY() {
-        return y;
+        return pieceY;
     }
 
     public boolean isMoving() {
@@ -79,14 +81,15 @@ public class Piece {
     }
 
     public void doMoveStep() {
-        x = movingX[moveStepIndex];
-        y = movingY[moveStepIndex];
+        pieceX = movingX[moveStepIndex];
+        pieceY = movingY[moveStepIndex];
         moveStepIndex++;
         if (moveStepIndex == Constants.MOVE_STEPS) {
             stopMoving();
         }
     }
 
+    @SuppressWarnings("PMD.NullAssignment")
     public void stopMoving() {
         movingX = null;
         movingY = null;
@@ -109,11 +112,11 @@ public class Piece {
         return type;
     }
 
-    public boolean hasType(Type type) {
+    public boolean hasType(final Type type) {
         return this.type == type;
     }
 
-    public boolean hasColor(Color color) {
+    public boolean hasColor(final Color color) {
         return this.color == color;
     }
 
@@ -130,8 +133,8 @@ public class Piece {
         return "Piece{" +
                 "color=" + color +
                 ", type=" + type +
-                ", x=" + x +
-                ", y=" + y +
+                ", pieceX=" + pieceX +
+                ", pieceY=" + pieceY +
                 ", movingX=" + Arrays.toString(movingX) +
                 ", movingY=" + Arrays.toString(movingY) +
                 ", moveStepIndex=" + moveStepIndex +
