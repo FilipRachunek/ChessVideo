@@ -328,7 +328,7 @@ public class Move {
     private int getColumnIndex(final String columnCode) {
         int index = -1;
         for (int i = 0; i < 10; i++) {
-            if (Constants.COLUMN_ARRAY[i].equals(columnCode)) {
+            if (Constants.getColumn(i).equals(columnCode)) {
                 index = i;
                 break;
             }
@@ -339,7 +339,7 @@ public class Move {
     private int getRowIndex(final String rowCode) {
         int index = -1;
         for (int i = 0; i < 10; i++) {
-            if (Constants.ROW_ARRAY[i].equals(rowCode)) {
+            if (Constants.getRow(i).equals(rowCode)) {
                 index = i;
                 break;
             }

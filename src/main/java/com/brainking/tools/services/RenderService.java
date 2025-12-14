@@ -142,12 +142,12 @@ public class RenderService {
         for (int row = 0; row < game.getHeight(); row++) {
             final int index = game.hasOppositeOrientation() ? game.getHeight() - 1 - row : row;
             final int yPos = boardY + (game.getHeight() - row) * squareSize - (squareSize - ascent) / 2;
-            graphics2d.drawString(Constants.ROW_ARRAY[index], boardX - 30, yPos);
-            graphics2d.drawString(Constants.ROW_ARRAY[index], boardX + game.getWidth() * squareSize + space, yPos);
+            graphics2d.drawString(Constants.getRow(index), boardX - 30, yPos);
+            graphics2d.drawString(Constants.getRow(index), boardX + game.getWidth() * squareSize + space, yPos);
         }
         for (int column = 0; column < game.getWidth(); column++) {
             final int index = game.hasOppositeOrientation() ? game.getWidth() - 1 - column : column;
-            final String string = Constants.COLUMN_ARRAY[index].toUpperCase(Locale.ENGLISH);
+            final String string = Constants.getColumn(index).toUpperCase(Locale.ENGLISH);
             final int xPos = boardX + column * squareSize + (squareSize - fontMetrics.stringWidth(string)) / 2;
             graphics2d.drawString(string, xPos, boardY - space);
             graphics2d.drawString(string, xPos, boardY + game.getHeight() * squareSize + ascent);

@@ -13,7 +13,6 @@ public class Piece {
     private int[] movingX;
     private int[] movingY;
     private int moveStepIndex;
-    private boolean visible;
 
     public static Piece from(final Piece from) {
         return new Piece(from.color, from.type);
@@ -81,8 +80,8 @@ public class Piece {
     }
 
     public void doMoveStep() {
-        pieceX = movingX[moveStepIndex];
-        pieceY = movingY[moveStepIndex];
+        pieceX = movingX == null ? -1 : movingX[moveStepIndex];
+        pieceY = movingY == null ? -1 : movingY[moveStepIndex];
         moveStepIndex++;
         if (moveStepIndex == Constants.MOVE_STEPS) {
             stopMoving();
@@ -162,7 +161,6 @@ public class Piece {
                 ", movingX=" + Arrays.toString(movingX) +
                 ", movingY=" + Arrays.toString(movingY) +
                 ", moveStepIndex=" + moveStepIndex +
-                ", visible=" + visible +
                 '}';
     }
 }

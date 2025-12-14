@@ -46,8 +46,8 @@ public class Game {
 
     public BufferedImage getFromPieceMap(final Color color, final String key) {
         return switch (color) {
-            case Color.WHITE -> whitePieceMap.get(key);
-            case Color.BLACK -> blackPieceMap.get(key);
+            case Color.WHITE -> whitePieceMap == null ? null : whitePieceMap.get(key);
+            case Color.BLACK -> blackPieceMap == null ? null : blackPieceMap.get(key);
         };
     }
 

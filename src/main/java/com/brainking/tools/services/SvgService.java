@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @SuppressWarnings("PMD.LooseCoupling")
-public class SvgService {
+public final class SvgService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SvgService.class);
     private static final String FOLDER = "/images/chess/";
@@ -68,9 +68,9 @@ public class SvgService {
 
     public Map<String, BufferedImage> getBufferedImageMap(final Map<String, String> imageResourceMap, final int squareSize) {
         final Map<String, BufferedImage> map = new HashMap<>();
-        for (final String key : imageResourceMap.keySet()) {
-            LOG.info("Loading " + imageResourceMap.get(key));
-            map.put(key, getImageFromSvg(getClass().getResourceAsStream(imageResourceMap.get(key)), squareSize));
+        for (final Map.Entry<String, String> entry : imageResourceMap.entrySet()) {
+            LOG.info("Loading " + entry.getValue());
+            map.put(entry.getKey(), getImageFromSvg(getClass().getResourceAsStream(entry.getValue()), squareSize));
         }
         return map;
     }

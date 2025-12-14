@@ -15,7 +15,7 @@ public final class YouTubeTester {
         game.addMetadata("White", "White");
         game.addMetadata("Black", "Black");
         game.addMetadata("Result", "1-0");
-        final String pathToVideo = "/Volumes/Samsung_T5/Video/Generated/2479782.mp4";
+        final String pathToVideo = "x";
         youTubeService.uploadVideo(game, pathToVideo);
 
     }

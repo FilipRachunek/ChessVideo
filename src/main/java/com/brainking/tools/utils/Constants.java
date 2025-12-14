@@ -23,8 +23,9 @@ public class Constants {
     public static final Color HIGHLIGHT_TARGET = new Color(150, 150, 255);
     public static final Color HIGHLIGHT_CHECK = new Color(255, 0, 0, 100);
     public static final Color INVISIBLE_SQUARE = Color.BLACK;
-    public static final String[] ROW_ARRAY = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
-    public static final String[] COLUMN_ARRAY = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"};
+
+    private static final String[] ROW_ARRAY = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
+    private static final String[] COLUMN_ARRAY = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"};
 
     public static final String EXTINCTION = "Extinction";
     public static final String THREE_CHECKS = "Three Checks";
@@ -51,6 +52,14 @@ public class Constants {
     public static final String JANUS = "Janus";
     public static final String CAPABLANCA_RANDOM = "Capablanca Random";
     public static final String DARK = "Dark";
+
+    public static String getRow(final int index) {
+        return ROW_ARRAY[index];
+    }
+
+    public static String getColumn(final int index) {
+        return COLUMN_ARRAY[index];
+    }
 
     public static int getSquareSize(final Game game) {
         return BOARD_SIZE / Math.max(game.getWidth(), game.getHeight());
