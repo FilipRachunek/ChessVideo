@@ -8,7 +8,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +18,8 @@ import org.slf4j.LoggerFactory;
 public class Game {
 
     private static final Logger log = LoggerFactory.getLogger(Game.class);
+    private static final DateTimeFormatter INPUT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+    private static final DateTimeFormatter OUTPUT = DateTimeFormatter.ofPattern("d. MMMM yyyy", Locale.ENGLISH);
 
     private final String name;
     private final Map<String, String> metadataMap = new HashMap<>();
@@ -141,13 +145,11 @@ public class Game {
         return metadataMap.get("Date");
     }
 
-    public String getFormattedDate() {
-        try {
-            LocalDate localDate = LocalDate.parse(getDate(), DateTimeFormatter.ofPattern("yyyy.MM.dd"));
-            return DateTimeFormatter.ofPattern("d. MMMM yyyy").format(localDate);
-        } catch (Exception ex) {
-            return "";
-        }
+    public Optional<String> getFormattedDate() {
+        return Optional.ofNullable(getDate())
+                .filter(s -> !s.isBlank())
+                .map(s -> LocalDate.parse(s, INPUT))
+                .map(OUTPUT::format);
     }
 
     public String getWhite() {

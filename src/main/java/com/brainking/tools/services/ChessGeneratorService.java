@@ -123,7 +123,7 @@ public class ChessGeneratorService {
                     metadataWriter.write(", " + game.getResult() + "\n");
                     metadataWriter.write("Visit my chess blog: https://LookIntoChess.com\n");
                     metadataWriter.write("\n");
-                    metadataWriter.write("Played on BrainKing.com (" + game.getWhite() + " vs. " + game.getBlack() + "), " + game.getFormattedDate() + "\n");
+                    metadataWriter.write("Played on BrainKing.com (" + game.getWhite() + " vs. " + game.getBlack() + "), " + game.getFormattedDate().orElse("") + "\n");
                     metadataWriter.write("\n");
                     metadataWriter.write(game.getPgnCode() + "\n");
                     metadataWriter.close();
