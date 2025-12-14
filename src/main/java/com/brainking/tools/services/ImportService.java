@@ -7,6 +7,8 @@ import com.brainking.tools.dto.Move;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -18,12 +20,14 @@ import java.util.regex.Pattern;
 @Service
 public class ImportService {
 
+    private static final Logger log = LoggerFactory.getLogger(ImportService.class);
+
     private static final Pattern metadataPattern = Pattern.compile("^\\[([^\\s]+)\\s+\"(.+)\"]$");
     private static final Pattern moveListPattern = Pattern.compile("\\d+.\\s+[^\\s]+\\s+[^\\s]+");
     private static final Pattern movePattern = Pattern.compile("(\\d+).\\s+([^\\s]+)\\s+([^\\s]+)");
 
     public Game importPgn(File file) throws IOException {
-        System.out.println("Loading PGN file: " + file.getAbsolutePath());
+        log.info("Loading PGN file: " + file.getAbsolutePath());
         Game game = new Game(FilenameUtils.getBaseName(file.getName()));
         List<String> lines = FileUtils.readLines(file, "UTF-8");
         game.setPgnCode(String.join("\n", lines));

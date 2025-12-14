@@ -10,7 +10,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Game {
+
+    private static final Logger log = LoggerFactory.getLogger(Game.class);
 
     private final String name;
     private final Map<String, String> metadataMap = new HashMap<>();
@@ -47,7 +52,7 @@ public class Game {
     }
 
     public void addMetadata(String key, String value) {
-        System.out.println(key + ": " + value);
+        log.debug(key + ": " + value);
         metadataMap.put(key, value);
     }
 

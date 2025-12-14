@@ -9,7 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Position {
+
+    private static final Logger log = LoggerFactory.getLogger(Position.class);
 
     private final Game game;
     private final Piece[][] pieceGrid;
@@ -68,7 +73,7 @@ public class Position {
 
     public void startMoving(Move move) {
         if (move.isAmbiguous() || move.isPlace()) {
-            System.out.println(move);
+            log.info(move.toString());
             currentMove = Move.from(move);
             if (move.isPlace()) {
                 for (Piece piece : capturedPieces.get(currentMove.getOppositeColor())) {
@@ -86,7 +91,7 @@ public class Position {
         if (!move.isEmpty()) {
             // calculate rows and columns from the PGN code
             addSourceSquareToMove(move);
-            System.out.println(move);
+            log.info(move.toString());
             currentMove = Move.from(move);
             // calculate frame steps
             pieceGrid[move.fromRow][move.fromColumn].setTargetXYAndSteps(game, move.toColumn, move.toRow);
@@ -540,7 +545,7 @@ public class Position {
             }
             if (isFinished()) {
                 String r = getResult();
-                System.out.println("Result: " + r);
+                log.info("Result: " + r);
                 result = " (" + r + ")";
             }
         }

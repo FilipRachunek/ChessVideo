@@ -2,6 +2,8 @@ package com.brainking.tools.services;
 
 import com.brainking.tools.utils.Constants;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import ws.schild.jave.Encoder;
 import ws.schild.jave.MultimediaObject;
@@ -16,6 +18,8 @@ import java.util.Arrays;
 
 @Service
 public class EncoderService {
+
+    private static final Logger log = LoggerFactory.getLogger(EncoderService.class);
 
     public String convertToMP4(String targetFolder, String videoName) {
         try {
@@ -34,7 +38,7 @@ public class EncoderService {
             FileUtils.forceDelete(source);
             return targetFolder + "/" + videoName + ".mp4";
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error("Error converting the video to MP4.", ex);
             return null;
         }
     }
@@ -57,7 +61,7 @@ public class EncoderService {
             Encoder encoder = new Encoder();
             encoder.encode(Arrays.asList(new MultimediaObject(audio), new MultimediaObject(video)), target, attrs);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error("Error adding audio to the video.", ex);
         }
     }
 
