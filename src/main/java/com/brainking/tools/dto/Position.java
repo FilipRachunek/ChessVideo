@@ -555,9 +555,9 @@ public class Position {
             // recalculate visible squares
             resetVisibleGrid();
         }
-   }
+    }
 
-   @SuppressWarnings("PMD.NullAssignment")
+    @SuppressWarnings("PMD.NullAssignment")
     private void handleAtomicExplosion() {
         // handle exploded pieces
         // TODO: maybe some simple animation?
@@ -581,17 +581,7 @@ public class Position {
         for (int row = 0; row < game.getHeight(); row++) {
             for (int column = 0; column < game.getWidth(); column++) {
                 if (pieceGrid[row][column] == null) {
-                    for (final int[] array : Type.KING.getMoveDirectionArray()) {
-                        if (pieceGrid[row][column] == null &&
-                                (array[0] == 0 || array[1] == 0)) {
-                            final int testRow = row + array[0];
-                            final int testColumn = column + array[1];
-                            if (isValidSquare(testRow, testColumn) &&
-                                    !isPlayablePiece(pieceGrid[testRow][testColumn])) {
-                                addPiece(new Piece(Type.ICE_CUBE), row, column);
-                            }
-                        }
-                    }
+                    addSurroundingIceCubes(row, column);
                 }
             }
         }
@@ -599,29 +589,46 @@ public class Position {
         for (int row = 0; row < game.getHeight(); row++) {
             for (int column = 0; column < game.getWidth(); column++) {
                 if (pieceGrid[row][column] != null && !pieceGrid[row][column].hasType(Type.ICE_CUBE)) {
-                    boolean connectedPieceFound = false;
-                    for (final int[] array : Type.KING.getMoveDirectionArray()) {
-                        final int testRow = row + array[0];
-                        final int testColumn = column + array[1];
-                        if (isValidSquare(testRow, testColumn) &&
-                                isPlayablePiece(pieceGrid[testRow][testColumn])) {
-                            connectedPieceFound = true;
-                        }
-                    }
-                    if (!connectedPieceFound) {
-                        capturePiece(pieceGrid[row][column]);
-                        addPiece(new Piece(Type.ICE_CUBE), row, column);
-                    }
+                    freezePiece(row, column);
                 }
             }
         }
     }
 
+    private void addSurroundingIceCubes(final int row, final int column) {
+        for (final int[] array : Type.KING.getMoveDirectionArray()) {
+            if (pieceGrid[row][column] == null &&
+                    (array[0] == 0 || array[1] == 0)) {
+                final int testRow = row + array[0];
+                final int testColumn = column + array[1];
+                if (isValidSquare(testRow, testColumn) &&
+                        !isPlayablePiece(pieceGrid[testRow][testColumn])) {
+                    addPiece(new Piece(Type.ICE_CUBE), row, column);
+                }
+            }
+        }
+    }
+
+    private void freezePiece(final int row, final int column) {
+        boolean connectedPieceFound = false;
+        for (final int[] array : Type.KING.getMoveDirectionArray()) {
+            final int testRow = row + array[0];
+            final int testColumn = column + array[1];
+            if (isValidSquare(testRow, testColumn) &&
+                    isPlayablePiece(pieceGrid[testRow][testColumn])) {
+                connectedPieceFound = true;
+            }
+        }
+        if (!connectedPieceFound) {
+            capturePiece(pieceGrid[row][column]);
+            addPiece(new Piece(Type.ICE_CUBE), row, column);
+        }
+    }
+
     private void calculatePieceReach(final Piece piece, final int row, final int column) {
-        final Color color = piece.getColor();
         if (piece.isPawn()) {
-            final int direction = color == Color.WHITE ? 1 : -1;
-            final int startRow = color == Color.WHITE ? 1 : 6;
+            final int direction = piece.isWhite() ? 1 : -1;
+            final int startRow = piece.isWhite() ? 1 : 6;
             visibleGrid[row + direction][column] = true;
             if (row == startRow && !isPlayablePiece(pieceGrid[row + direction][column])) {
                 visibleGrid[row + direction + direction][column] = true;
@@ -674,35 +681,43 @@ public class Position {
     }
 
     private void addSourceSquareToMove(final Move move) {
-        if (move.getType() == Type.PAWN && game.isVariant(Constants.LEGAN)) {
-            if (move.isCapture()) {
-                if (move.fromColumn == move.toColumn) {
-                    move.fromRow = move.toRow + (move.getColor() == Color.WHITE ? -1 : 1);
-                } else {
-                    move.fromRow = move.toRow;
-                }
-            } else {
-                move.fromRow = move.toRow + (move.getColor() == Color.WHITE ? -1 : 1);
-                move.fromColumn = move.toColumn + (move.getColor() == Color.WHITE ? 1 : -1);
-            }
-        } else if (move.getType() == Type.PAWN && !move.isRelayed()) {
-            int testRow = move.toRow + (move.getColor() == Color.WHITE ? -1 : 1);
-            if (move.fromColumn == -1) {
-                // no capture
-                move.fromColumn = move.toColumn;
-                if (pieceGrid[testRow][move.fromColumn] == null ||
-                        pieceGrid[testRow][move.fromColumn].hasType(Type.HOLE)) {
-                    testRow = move.toRow + (move.getColor() == Color.WHITE ? -2 : 2);
-                }
-            }
-            move.fromRow = testRow;
+        if (move.isPawn() && game.isVariant(Constants.LEGAN)) {
+            addSourceSquareLeganPawn(move);
+        } else if (move.isPawn() && !move.isRelayed()) {
+            addSourceSquareNormalPawn(move);
         } else {
             addSourceSquareForPiece(move);
         }
     }
 
+    private void addSourceSquareLeganPawn(final Move move) {
+        if (move.isCapture()) {
+            if (move.fromColumn == move.toColumn) {
+                move.fromRow = move.toRow + (move.isWhite() ? -1 : 1);
+            } else {
+                move.fromRow = move.toRow;
+            }
+        } else {
+            move.fromRow = move.toRow + (move.isWhite() ? -1 : 1);
+            move.fromColumn = move.toColumn + (move.isWhite() ? 1 : -1);
+        }
+    }
+
+    private void addSourceSquareNormalPawn(final Move move) {
+        int testRow = move.toRow + (move.isWhite() ? -1 : 1);
+        if (move.fromColumn == -1) {
+            // no capture
+            move.fromColumn = move.toColumn;
+            if (pieceGrid[testRow][move.fromColumn] == null ||
+                    pieceGrid[testRow][move.fromColumn].isHole()) {
+                testRow = move.toRow + (move.isWhite() ? -2 : 2);
+            }
+        }
+        move.fromRow = testRow;
+    }
+
     private void addSourceSquareForPiece(final Move move) {
-        final Type type = move.isRelayed() ? Type.KNIGHT : move.getType();
+        final Type type = move.getRelayedType();
         final Color color = move.getColor();
         final int[][] moveDirectionArray = type.getMoveDirectionArray();
         int maxMoveDistance = type.getMaxMoveDistance();
@@ -746,7 +761,7 @@ public class Position {
                             if (pieceFound) {
                                 move.fromRow = testRow;
                                 move.fromColumn = testColumn;
-                                return;
+                                directionSearch = false;
                             }
                         } else {
                             directionSearch = false;

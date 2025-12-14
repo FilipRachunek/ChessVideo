@@ -78,6 +78,10 @@ public class Move {
         return type;
     }
 
+    public Type getRelayedType() {
+        return relayed ? Type.KNIGHT : type;
+    }
+
     public boolean isCastlingType(final String variant) {
         return Constants.KNIGHTMATE.equals(variant) && type == Type.KNIGHT ||
                 !Constants.KNIGHTMATE.equals(variant) && type == Type.KING;
