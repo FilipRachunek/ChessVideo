@@ -5,8 +5,6 @@ import com.brainking.tools.dto.Move;
 import com.brainking.tools.dto.Position;
 import com.brainking.tools.utils.Constants;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jcodec.api.awt.AWTSequenceEncoder;
 import org.slf4j.Logger;
@@ -40,6 +38,7 @@ public class ChessGeneratorService {
     private final ImportService importService;
     private final YouTubeService youTubeService;
     private final EncoderService encoderService;
+    private final FileService fileService;
 
     private final String sourceFolder;
     private final String targetFolder;
@@ -52,6 +51,7 @@ public class ChessGeneratorService {
                                 final ImportService importService,
                                 final YouTubeService youTubeService,
                                 final EncoderService encoderService,
+                                final FileService fileService,
                                 @Value("${source.folder}") final String sourceFolder,
                                 @Value("${target.folder}") final String targetFolder,
                                 @Value("${youtube.export.active:false}") final boolean youTubeExportActive,
@@ -61,6 +61,7 @@ public class ChessGeneratorService {
         this.importService = importService;
         this.youTubeService = youTubeService;
         this.encoderService = encoderService;
+        this.fileService = fileService;
         this.sourceFolder = sourceFolder;
         this.targetFolder = targetFolder;
         this.youTubeExportActive = youTubeExportActive;
@@ -73,22 +74,18 @@ public class ChessGeneratorService {
         final String processedFolder = sourceFolder + "/processed";
         final File input = new File(sourceFolder);
         final File archive = new File(processedFolder);
-        final Collection<File> files = FileUtils.listFiles(input, extensions, false);
+        final Collection<File> files = fileService.getSourceFiles(input, extensions);
         if (CollectionUtils.isEmpty(files)) {
             LOG.info("No PGN files found.");
             return;
         }
-        createFolders(input, archive);
+        fileService.createSourceFolders(input, archive);
         // TODO: setup YouTube OAuth 2 flow at the start
         for (final File pgnFile : files) {
-            final Collection<File> existingFiles = FileUtils.listFiles(archive, FileFilterUtils.nameFileFilter(pgnFile.getName()), null);
+            final Collection<File> existingFiles = fileService.getExistingSourceFiles(archive, pgnFile);
             if (!existingFiles.isEmpty()) {
                 LOG.info("File " + pgnFile.getName() + " already processed, deleting.");
-                try {
-                    FileUtils.forceDelete(pgnFile);
-                } catch (IOException ex) {
-                    LOG.error("Error deleting the file.", ex);
-                }
+                fileService.deleteFile(pgnFile);
                 continue;
             }
             final long currentTime = System.currentTimeMillis();
@@ -104,14 +101,14 @@ public class ChessGeneratorService {
                 final Position position = positionService.generateStartPosition(game);
                 final String videoFolder = targetFolder + (StringUtils.isNotBlank(game.getVariant()) ? "/" + game.getVariant() : "");
                 LOG.info("Rendering the video to " + videoFolder);
-                FileUtils.forceMkdir(new File(videoFolder));
+                fileService.createFolder(videoFolder);
                 final String videoName = game.getName();
                 if (generateVideo) {
                     writeMetadata(game, videoFolder, videoName);
                 }
                 AWTSequenceEncoder encoder = null;
                 if (generateVideo) {
-                    encoder = AWTSequenceEncoder.create25Fps(new File(videoFolder, videoName + ".mov"));
+                    encoder = encoderService.createEncoder(videoFolder, videoName);
                 }
                 final List<Move> processedMoves = getProcessedMoves(encoder, game, position, moves, videoFolder, videoName);
                 // display result and keep it for 10 seconds
@@ -128,7 +125,7 @@ public class ChessGeneratorService {
                             new SimpleDateFormat("mm:ss", Locale.ENGLISH). format(System.currentTimeMillis() - currentTime) +
                             " minutes");
                     LOG.info("Archiving file " + pgnFile + " to " + processedFolder);
-                    FileUtils.moveFileToDirectory(pgnFile, archive, true);
+                    fileService.moveFileToFolder(pgnFile, archive);
                     if (youTubeExportActive) {
                         // TODO: https://explorer.lichess.ovh/master?fen=<fenCode>
                         LOG.info("Uploading video " + pathToVideo + " to YouTube");
@@ -141,15 +138,6 @@ public class ChessGeneratorService {
             } catch (IOException ex) {
                 LOG.error("Error rendering the video.", ex);
             }
-        }
-    }
-
-    private void createFolders(final File input, final File archive) {
-        try {
-            FileUtils.forceMkdir(input);
-            FileUtils.forceMkdir(archive);
-        } catch (IOException ex) {
-            LOG.error("Error creating folders.", ex);
         }
     }
 

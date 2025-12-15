@@ -2,6 +2,7 @@ package com.brainking.tools.services;
 
 import com.brainking.tools.utils.Constants;
 import org.apache.commons.io.FileUtils;
+import org.jcodec.api.awt.AWTSequenceEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,10 @@ import java.util.Arrays;
 public class EncoderService {
 
     private static final Logger LOG = LoggerFactory.getLogger(EncoderService.class);
+
+    public AWTSequenceEncoder createEncoder(final String videoFolder, final String videoName) throws IOException {
+        return AWTSequenceEncoder.create25Fps(new File(videoFolder, videoName + ".mov"));
+    }
 
     public String convertToMP4(final String targetFolder, final String videoName) {
         String result = "";
