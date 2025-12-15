@@ -2,6 +2,8 @@ package com.brainking.tools.services;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 
 import org.apache.commons.io.FileUtils;
@@ -9,6 +11,8 @@ import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import com.brainking.tools.dto.Game;
 
 @Service
 public class FileService {
@@ -55,6 +59,23 @@ public class FileService {
         } catch (IOException ex) {
             LOG.error("Error moving file to folder.", ex);
         }
+    }
+
+    public void writeMetadata(final Game game, final String videoFolder, final String videoName) throws IOException {
+        final String content = """
+                {result}
+                Visit my chess blog: https://LookIntoChess.com
+
+                Played on BrainKing.com ({white} vs. {black}), {date}
+
+                {pgn}
+                """
+                .replace("{result}", game.getResult())
+                .replace("{white}", game.getWhite())
+                .replace("{black}", game.getBlack())
+                .replace("{date}", game.getFormattedDate().orElse(""))
+                .replace("{pgn}", game.getPgnCode());
+        Files.writeString(Path.of(videoFolder, videoName + ".txt"), content);
     }
 
 }

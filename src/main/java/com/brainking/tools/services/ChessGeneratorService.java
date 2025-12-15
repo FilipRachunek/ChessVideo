@@ -19,8 +19,6 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -104,7 +102,7 @@ public class ChessGeneratorService {
                 fileService.createFolder(videoFolder);
                 final String videoName = game.getName();
                 if (generateVideo) {
-                    writeMetadata(game, videoFolder, videoName);
+                    fileService.writeMetadata(game, videoFolder, videoName);
                 }
                 AWTSequenceEncoder encoder = null;
                 if (generateVideo) {
@@ -139,23 +137,6 @@ public class ChessGeneratorService {
                 LOG.error("Error rendering the video.", ex);
             }
         }
-    }
-
-    private void writeMetadata(final Game game, final String videoFolder, final String videoName) throws IOException {
-        final String content = """
-                {result}
-                Visit my chess blog: https://LookIntoChess.com
-
-                Played on BrainKing.com ({white} vs. {black}), {date}
-
-                {pgn}
-                """
-                .replace("{result}", game.getResult())
-                .replace("{white}", game.getWhite())
-                .replace("{black}", game.getBlack())
-                .replace("{date}", game.getFormattedDate().orElse(""))
-                .replace("{pgn}", game.getPgnCode());
-        Files.writeString(Path.of(videoFolder, videoName + ".txt"), content);
     }
 
     private List<Move> getProcessedMoves(
