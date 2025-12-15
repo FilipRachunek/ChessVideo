@@ -9,6 +9,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -677,7 +678,7 @@ public class Position {
     }
 
     private boolean isPlayablePiece(final Piece piece) {
-        return piece != null && piece.isPlayable();
+        return Optional.ofNullable(piece).map(Piece::isPlayable).orElse(false);
     }
 
     private void addSourceSquareToMove(final Move move) {

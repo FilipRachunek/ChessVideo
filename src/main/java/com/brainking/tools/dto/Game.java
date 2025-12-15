@@ -36,6 +36,8 @@ public class Game {
         this.name = name;
         width = 8;
         height = 8;
+        whitePieceMap = new HashMap<>();
+        blackPieceMap = new HashMap<>();
     }
 
     public void addPieceMaps(final Map<String, BufferedImage> whitePieceMap,
@@ -46,8 +48,8 @@ public class Game {
 
     public BufferedImage getFromPieceMap(final Color color, final String key) {
         return switch (color) {
-            case Color.WHITE -> whitePieceMap == null ? null : whitePieceMap.get(key);
-            case Color.BLACK -> blackPieceMap == null ? null : blackPieceMap.get(key);
+            case Color.WHITE -> whitePieceMap.get(key);
+            case Color.BLACK -> blackPieceMap.get(key);
         };
     }
 
