@@ -104,7 +104,7 @@ public class YouTubeService {
                     .setYouTubeRequestInitializer(new YouTubeRequestInitializer(apiKey))
                     .build();
         } else {
-        final Credential credential = authorize(httpTransport);
+            final Credential credential = authorize(httpTransport);
             youTube = new YouTube.Builder(httpTransport, JSON_FACTORY, credential)
                     .setApplicationName(APPLICATION_NAME)
                     .build();
