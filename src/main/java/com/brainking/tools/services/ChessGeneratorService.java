@@ -106,7 +106,7 @@ public class ChessGeneratorService {
                 }
                 AWTSequenceEncoder encoder = null;
                 if (generateVideo) {
-                    encoder = encoderService.createEncoder(videoFolder, videoName);
+                    encoder = encoderService.createMovEncoder(videoFolder, videoName);
                 }
                 final List<Move> processedMoves = getProcessedMoves(encoder, game, position, moves, videoFolder, videoName);
                 // display result and keep it for 10 seconds

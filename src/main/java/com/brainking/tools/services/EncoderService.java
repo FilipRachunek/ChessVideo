@@ -1,10 +1,11 @@
 package com.brainking.tools.services;
 
+import com.brainking.tools.services.utils.EncoderCoreService;
 import com.brainking.tools.utils.Constants;
-import org.apache.commons.io.FileUtils;
 import org.jcodec.api.awt.AWTSequenceEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ws.schild.jave.Encoder;
 import ws.schild.jave.EncoderException;
@@ -24,8 +25,17 @@ public class EncoderService {
 
     private static final Logger LOG = LoggerFactory.getLogger(EncoderService.class);
 
-    public AWTSequenceEncoder createEncoder(final String videoFolder, final String videoName) throws IOException {
-        return AWTSequenceEncoder.create25Fps(new File(videoFolder, videoName + ".mov"));
+    private final EncoderCoreService encoderCoreService;
+    private final FileService fileService;
+
+    @Autowired
+    public EncoderService(final EncoderCoreService encoderCoreService, final FileService fileService) {
+        this.encoderCoreService = encoderCoreService;
+        this.fileService = fileService;
+    }
+
+    public AWTSequenceEncoder createMovEncoder(final String videoFolder, final String videoName) throws IOException {
+        return encoderCoreService.createMovEncoder(videoFolder, videoName);
     }
 
     public String convertToMP4(final String targetFolder, final String videoName) {
@@ -41,11 +51,11 @@ public class EncoderService {
             final EncodingAttributes attrs = new EncodingAttributes();
             attrs.setOutputFormat("mp4");
             attrs.setVideoAttributes(video);
-            final Encoder encoder = new Encoder();
+            final Encoder encoder = encoderCoreService.createMP4Encoder();
             encoder.encode(new MultimediaObject(source), target, attrs);
-            FileUtils.forceDelete(source);
+            fileService.deleteFile(source);
             result = targetFolder + "/" + videoName + ".mp4";
-        } catch (EncoderException | IOException ex) {
+        } catch (EncoderException ex) {
             LOG.error("Error converting the video to MP4.", ex);
         }
         return result;
@@ -66,7 +76,7 @@ public class EncoderService {
             attrs.setOutputFormat("mp4");
             attrs.setAudioAttributes(audioAttributes);
             attrs.setVideoAttributes(videoAttributes);
-            final Encoder encoder = new Encoder();
+            final Encoder encoder = encoderCoreService.createMP4Encoder();
             encoder.encode(Arrays.asList(new MultimediaObject(audio), new MultimediaObject(video)), target, attrs);
         } catch (EncoderException ex) {
             LOG.error("Error adding audio to the video.", ex);

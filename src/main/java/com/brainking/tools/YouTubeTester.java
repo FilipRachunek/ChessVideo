@@ -2,6 +2,7 @@ package com.brainking.tools;
 
 import com.brainking.tools.dto.Game;
 import com.brainking.tools.services.YouTubeService;
+import com.brainking.tools.services.utils.YouTubeCoreService;
 
 public final class YouTubeTester {
 
@@ -9,7 +10,7 @@ public final class YouTubeTester {
     }
 
     void main() {
-        final YouTubeService youTubeService = new YouTubeService("x", "y", "z");
+        final YouTubeService youTubeService = new YouTubeService(new YouTubeCoreService(), "x", "y", "z");
         youTubeService.listChannel();
         final Game game = new Game("TestGame");
         game.addMetadata("White", "White");

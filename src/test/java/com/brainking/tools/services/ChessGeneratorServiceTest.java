@@ -57,7 +57,7 @@ class ChessGeneratorServiceTest {
         doReturn(game).when(importService).importPgn(any(File.class));
         final Position position = new Position(game);
         doReturn(position).when(positionService).generateStartPosition(game);
-        doReturn(mock(AWTSequenceEncoder.class)).when(encoderService).createEncoder(anyString(), anyString());
+        doReturn(mock(AWTSequenceEncoder.class)).when(encoderService).createMovEncoder(anyString(), anyString());
         doReturn(mock(BufferedImage.class)).when(renderService).getRenderedImage(any(), any(), any());
         doReturn("youTubeId").when(youTubeService).uploadVideo(any(), any());
         chessGeneratorService.renderChessVideo();
