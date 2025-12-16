@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import com.brainking.tools.dto.Game;
 import com.brainking.tools.dto.Position;
 
-@SuppressWarnings("PMD.TooManyStaticImports")
 class ChessGeneratorServiceTest {
 
     private RenderService renderService;

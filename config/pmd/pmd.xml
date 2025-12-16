@@ -19,6 +19,7 @@
     <exclude name="CommentDefaultAccessModifier"/>
     <exclude name="ShortClassName"/>
     <exclude name="LongVariable"/>
+    <exclude name="TooManyStaticImports"/>
   </rule>
 
 <rule ref="category/java/codestyle.xml/ShortClassName">
@@ -26,9 +27,16 @@
         <property name="minimum" value="4" />
     </properties>
 </rule>
+
 <rule ref="category/java/codestyle.xml/LongVariable">
     <properties>
         <property name="minimum" value="25" />
+    </properties>
+</rule>
+
+<rule ref="category/java/codestyle.xml/TooManyStaticImports">
+    <properties>
+        <property name="maximumStaticImports" value="10" />
     </properties>
 </rule>
 
