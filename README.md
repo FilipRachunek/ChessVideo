@@ -4,7 +4,9 @@ This is my private project. It is an MP4 video generator that plays back a chess
 
 **Note:** The finished video still contains some hard-coded text referencing the BrainKing.com game server. Hopefully, I’ll finally remove it over time.
 
-The application requires **Java 25** or higher and runs on **Spring Boot 4**. To successfully generate a video, at least one valid PGN file must be placed in the `data/pgn` subfolder (a sample game should be there).
+The application requires **Java 25** or higher and runs on **Spring Boot 4**. To successfully generate a video, at least one valid PGN file must be placed in the `data/pgn` subfolder.
+
+A sample game `8672028.pgn` should be there. Watch the generated video: https://www.youtube.com/watch?v=rcx2SzGTmWw
 
 The Gradle `build` task uses PMD and SpotBugs for static code analysis and, of course, runs all tests.
 
