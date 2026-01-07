@@ -11,6 +11,10 @@ public class Move {
     private static final String PLACE = "@";
     private static final String CAPTURE = "x";
 
+    private static final String UNFINISHED_MOVE = "?-";
+    private static final String SHORT_CASTLING = "O-O";
+    private static final String LONG_CASTLING = "O-O-O";
+
     private int moveNumber;
     private String pgnCode;
     private Color color;
@@ -190,12 +194,12 @@ public class Move {
             }
             index--;
         }
-        if (pgnCode.startsWith("?-")) {
+        if (pgnCode.startsWith(UNFINISHED_MOVE)) {
             // ?-e4
             ambiguous = true;
             toColumn = getColumnIndex(array[2]);
             toRow = getRowIndex(array[3]);
-        } else if (pgnCode.startsWith("O-O-O")) {
+        } else if (pgnCode.startsWith(LONG_CASTLING)) {
             castlingLong = true;
             type = game.isVariant(Constants.KNIGHTMATE) ? Type.KNIGHT : Type.KING;
             fromRow = color == Color.WHITE ? 0 : game.getHeight() - 1;
@@ -205,7 +209,7 @@ public class Move {
             if (game.isVariant(Constants.JANUS)) {
                 toColumn = 8;
             }
-        } else if (pgnCode.startsWith("O-O")) {
+        } else if (pgnCode.startsWith(SHORT_CASTLING)) {
             castlingShort = true;
             type = game.isVariant(Constants.KNIGHTMATE) ? Type.KNIGHT : Type.KING;
             fromRow = color == Color.WHITE ? 0 : game.getHeight() - 1;
