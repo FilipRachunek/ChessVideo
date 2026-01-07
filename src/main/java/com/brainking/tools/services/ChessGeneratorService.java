@@ -111,11 +111,7 @@ public class ChessGeneratorService {
                 final List<Move> processedMoves = getProcessedMoves(encoder, game, position, moves, videoFolder, videoName);
                 // display result and keep it for 10 seconds
                 if (encoder != null) {
-                    LOG.info("Rendering the final screen");
-                    final BufferedImage image = renderService.getRenderedImage(game, position, processedMoves);
-                    for (int i = 0; i < Constants.FRAMES_AFTER_LAST_MOVE; i++) {
-                        encoder.encodeImage(image);
-                    }
+                    encodeFinalScreen(encoder, game, position, processedMoves);
                     encoder.finish();
                     LOG.info("Converting to MP4");
                     final String pathToVideo = encoderService.convertToMP4(videoFolder, videoName);
@@ -183,6 +179,18 @@ public class ChessGeneratorService {
         }
         position.finishGame();
         return processedMoves;
+    }
+
+    private void encodeFinalScreen(
+        final AWTSequenceEncoder encoder,
+        final Game game,
+        final Position position,
+        final List<Move> processedMoves) throws IOException {
+        LOG.info("Rendering the final screen");
+        final BufferedImage image = renderService.getRenderedImage(game, position, processedMoves);
+        for (int i = 0; i < Constants.FRAMES_AFTER_LAST_MOVE; i++) {
+            encoder.encodeImage(image);
+        }
     }
 
 }
